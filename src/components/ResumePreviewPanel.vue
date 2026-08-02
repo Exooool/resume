@@ -15,6 +15,7 @@ const props = defineProps<{
   previewBlocks: ResumeBlock[];
   templateId: ResumeTemplateId;
   exportingType: 'pdf' | 'png' | 'jpg' | '';
+  spaceStyle?: Record<string, string>;
   compact?: boolean;
   collectPageRef: (element: unknown) => void;
   setMeasureRef: (element: unknown) => void;
@@ -151,6 +152,7 @@ function updateScale(width: number) {
                 :ref="collectPageRef"
                 class="resume-page"
                 :class="`resume-template-${templateId}`"
+                :style="spaceStyle"
               >
                 <ResumeBlockView
                   v-for="block in page"
@@ -169,6 +171,7 @@ function updateScale(width: number) {
         :ref="setMeasureRef"
         class="resume-page measure-page"
         :class="`resume-template-${templateId}`"
+        :style="spaceStyle"
       >
         <ResumeBlockView v-for="block in previewBlocks" :key="block.id" :block="block" />
       </div>

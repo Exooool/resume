@@ -373,7 +373,7 @@ textarea {
 .app-shell {
   display: grid;
   grid-row: 2;
-  grid-template-columns: minmax(360px, 480px) minmax(0, 1fr);
+  grid-template-columns: minmax(360px, 520px) minmax(0, 1fr);
   height: 100%;
   min-height: 0;
   overflow: hidden;
@@ -422,15 +422,57 @@ textarea {
   padding: 22px 24px 16px;
 }
 
-.panel-header > div:first-child {
+.panel-header {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.panel-header-title {
   min-width: 0;
 }
 
 .panel-header-actions {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 10px;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.panel-header-actions > .n-button,
+.panel-header-actions > .panel-header-action-item {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.panel-header-action-item {
+  display: flex;
+}
+
+.panel-header-actions .n-button {
+  width: 100%;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.more-config-panel {
+  min-width: 180px;
+  padding: 4px 2px;
+}
+
+.smart-one-page-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: #31414b;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
 }
 
 .panel-header h1,
@@ -862,15 +904,19 @@ textarea {
   box-shadow: none;
 }
 
+.resume-page {
+  --resume-space-scale: 1;
+}
+
 .resume-block {
-  margin-bottom: 18px;
+  margin-bottom: calc(18px * var(--resume-space-scale));
 }
 
 .resume-header {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 28px;
-  padding-bottom: 20px;
+  padding-bottom: calc(20px * var(--resume-space-scale));
   border-bottom: 2px solid #1f3a44;
 }
 
@@ -883,7 +929,7 @@ textarea {
 }
 
 .resume-header p {
-  margin: 8px 0 0;
+  margin: calc(8px * var(--resume-space-scale)) 0 0;
   color: #12715b;
   font-size: 16px;
   font-weight: 700;
@@ -906,8 +952,8 @@ textarea {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: 22px;
-  margin-bottom: 12px;
+  margin-top: calc(22px * var(--resume-space-scale));
+  margin-bottom: calc(12px * var(--resume-space-scale));
   color: #13252d;
   font-size: 16px;
   font-weight: 800;
@@ -970,8 +1016,8 @@ textarea {
 
 .resume-list {
   display: grid;
-  gap: 4px;
-  margin: 8px 0 0;
+  gap: calc(4px * var(--resume-space-scale));
+  margin: calc(8px * var(--resume-space-scale)) 0 0;
   padding-left: 18px;
   color: #304047;
   font-size: 12px;
@@ -1040,7 +1086,7 @@ textarea {
 .resume-template-fresh .section-heading {
   justify-content: flex-start;
   gap: 10px;
-  margin-top: 20px;
+  margin-top: calc(20px * var(--resume-space-scale));
   font-size: 15px;
 }
 
@@ -1060,7 +1106,7 @@ textarea {
 }
 
 .resume-template-compact .resume-block {
-  margin-bottom: 12px;
+  margin-bottom: calc(12px * var(--resume-space-scale));
 }
 
 .resume-template-compact .resume-header {
@@ -1087,8 +1133,8 @@ textarea {
 }
 
 .resume-template-compact .section-heading {
-  margin-top: 16px;
-  margin-bottom: 8px;
+  margin-top: calc(16px * var(--resume-space-scale));
+  margin-bottom: calc(8px * var(--resume-space-scale));
   font-size: 14px;
 }
 
@@ -1235,8 +1281,8 @@ textarea {
 
 .resume-template-cards .section-heading {
   gap: 0;
-  margin-top: 18px;
-  margin-bottom: 8px;
+  margin-top: calc(18px * var(--resume-space-scale));
+  margin-bottom: calc(8px * var(--resume-space-scale));
   padding: 8px 12px;
   border-radius: 4px;
   background: #eef5f2;
@@ -1360,12 +1406,12 @@ textarea {
 }
 
 .resume-template-minimal .resume-block {
-  margin-bottom: 22px;
+  margin-bottom: calc(22px * var(--resume-space-scale));
 }
 
 .resume-template-minimal .section-heading {
-  margin-top: 28px;
-  margin-bottom: 15px;
+  margin-top: calc(28px * var(--resume-space-scale));
+  margin-bottom: calc(15px * var(--resume-space-scale));
   color: #66766f;
   font-size: 13px;
 }
@@ -1451,7 +1497,7 @@ textarea {
   }
 
   .panel-header {
-    align-items: flex-start;
+    align-items: stretch;
     flex-direction: column;
     gap: 12px;
     width: 100%;
@@ -1461,12 +1507,16 @@ textarea {
 
   .panel-header-actions {
     width: 100%;
-    justify-content: stretch;
+    flex-wrap: wrap;
+  }
+
+  .panel-header-actions > .n-button,
+  .panel-header-actions > .panel-header-action-item {
+    flex: 1 1 calc(50% - 4px);
   }
 
   .panel-header-actions .n-button {
-    flex: 1;
-    min-width: 0;
+    width: 100%;
   }
 
   .preview-toolbar {

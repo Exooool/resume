@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowLeft, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, FlaskConical, LayoutGrid, Plus, Trash2 } from '@lucide/vue';
+import { ArrowLeft, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, FlaskConical, LayoutGrid, Plus, Settings2, Trash2 } from '@lucide/vue';
 import {
   NButton,
   NCard,
@@ -10,9 +10,11 @@ import {
   NFormItem,
   NIcon,
   NInput,
+  NPopover,
   NRadioButton,
   NRadioGroup,
   NScrollbar,
+  NSwitch,
   NTabPane,
   NTabs,
 } from 'naive-ui';
@@ -85,15 +87,28 @@ function expandAll(items: Array<{ id: string }>) {
 <template>
   <aside class="editor-panel">
     <header class="panel-header">
-      <div>
+      <div class="panel-header-title">
         <p class="eyebrow">Resume Editor</p>
         <h1>{{ resumeName }}</h1>
       </div>
       <div class="panel-header-actions">
+        <n-button secondary size="small" @click="emit('backToList')">
+          <template #icon>
+            <n-icon :component="ArrowLeft" />
+          </template>
+          <span class="panel-action-label">简历列表</span>
+        </n-button>
+        <n-button secondary size="small" @click="emit('openTemplateChooser')">
+          <template #icon>
+            <n-icon :component="LayoutGrid" />
+          </template>
+          <span class="panel-action-label">{{ compact ? '模板' : '模板选择' }}</span>
+        </n-button>
         <n-button
           v-if="showDemoFill"
           secondary
           type="warning"
+          size="small"
           @click="emit('fillDemo')"
         >
           <template #icon>
@@ -101,18 +116,24 @@ function expandAll(items: Array<{ id: string }>) {
           </template>
           <span class="panel-action-label">{{ compact ? '示例' : '模拟数据' }}</span>
         </n-button>
-        <n-button secondary @click="emit('backToList')">
-          <template #icon>
-            <n-icon :component="ArrowLeft" />
-          </template>
-          <span class="panel-action-label">简历列表</span>
-        </n-button>
-        <n-button secondary @click="emit('openTemplateChooser')">
-          <template #icon>
-            <n-icon :component="LayoutGrid" />
-          </template>
-          <span class="panel-action-label">{{ compact ? '模板' : '模板选择' }}</span>
-        </n-button>
+        <div class="panel-header-action-item">
+          <n-popover trigger="click" placement="bottom-start">
+            <template #trigger>
+              <n-button secondary size="small">
+                <template #icon>
+                  <n-icon :component="Settings2" />
+                </template>
+                <span class="panel-action-label">{{ compact ? '更多' : '更多配置' }}</span>
+              </n-button>
+            </template>
+            <div class="more-config-panel">
+              <label class="smart-one-page-control">
+                <span>智能一页</span>
+                <n-switch v-model:value="resume.smartOnePage" size="small" />
+              </label>
+            </div>
+          </n-popover>
+        </div>
       </div>
     </header>
 

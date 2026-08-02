@@ -26,10 +26,14 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
   const measureRef = ref<HTMLElement | null>(null);
   const pageRefs = ref<HTMLElement[]>([]);
   const exportingType = ref<'pdf' | 'png' | 'jpg' | ''>('');
+  const spaceScale = ref(1);
   let paginationTimer = 0;
 
   const previewBlocks = computed(() => createPreviewBlocks(resume));
   const pageCountLabel = computed(() => `${pages.value.length || 1} 页`);
+  const spaceStyle = computed(() => ({
+    '--resume-space-scale': String(spaceScale.value),
+  }));
 
   onBeforeUpdate(() => {
     pageRefs.value = [];
@@ -49,6 +53,13 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
 
   watch(
     () => resume.templateId,
+    () => {
+      schedulePagination();
+    },
+  );
+
+  watch(
+    () => resume.smartOnePage,
     () => {
       schedulePagination();
     },
@@ -122,8 +133,17 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
     const source = measureRef.value;
     const blocks = previewBlocks.value;
     if (!source || !blocks.length) {
+      spaceScale.value = 1;
       pages.value = [[]];
       return;
+    }
+
+    spaceScale.value = 1;
+    await nextTick();
+
+    if (resume.smartOnePage) {
+      spaceScale.value = await resolveSmartSpaceScale(source);
+      await nextTick();
     }
 
     const nodes = Array.from(source.children) as HTMLElement[];
@@ -497,6 +517,40 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
     );
   }
 
+  function measureStackedHeight(source: HTMLElement) {
+    return Array.from(source.children).reduce(
+      (total, node) => total + getOuterHeight(node as HTMLElement),
+      0,
+    );
+  }
+
+  async function resolveSmartSpaceScale(source: HTMLElement) {
+    const MIN_SPACE_SCALE = 0.35;
+    const naturalHeight = measureStackedHeight(source);
+    if (naturalHeight <= PREVIEW_CONTENT_HEIGHT) {
+      return 1;
+    }
+
+    let low = MIN_SPACE_SCALE;
+    let high = 1;
+    let best = MIN_SPACE_SCALE;
+
+    for (let step = 0; step < 8; step += 1) {
+      const mid = Number(((low + high) / 2).toFixed(3));
+      spaceScale.value = mid;
+      await nextTick();
+
+      if (measureStackedHeight(source) <= PREVIEW_CONTENT_HEIGHT) {
+        best = mid;
+        low = mid;
+      } else {
+        high = mid;
+      }
+    }
+
+    return best;
+  }
+
   async function capturePages() {
     await paginatePreview();
     await nextTick();
@@ -595,6 +649,7 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
     previewBlocks,
     pageCountLabel,
     exportingType,
+    spaceStyle,
     addEducation,
     removeEducation,
     addProject,

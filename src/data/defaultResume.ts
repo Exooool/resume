@@ -19,6 +19,7 @@ export function createBlankResume(): ResumeData {
     skillGroups: [],
     skillText: '',
     summary: '',
+    smartOnePage: false,
   };
 }
 
@@ -81,6 +82,7 @@ export function createTemplateChooserSample(): ResumeData {
     ],
     skillText: '前端：Vue 3 / TypeScript / Vite\n工程化：Git / CI/CD / Vitest',
     summary: '熟悉 Vue 技术栈和复杂表单场景，关注代码质量与用户体验。',
+    smartOnePage: false,
   };
 }
 
@@ -211,5 +213,6 @@ export function createDefaultResume(): ResumeData {
       '前端框架：Vue 3 / React / TypeScript / Vite / Pinia\nUI 与可视化：Naive UI / Element Plus / Ant Design Vue / ECharts\n工程化：Git / CI/CD / Vitest / ESLint / 性能优化\n其他：Node.js / RESTful API / Webpack / uni-app',
     summary:
       '具备扎实的前端工程能力，熟悉 Vue 技术栈和复杂表单、中后台、组件库等场景，关注产品细节、代码质量与用户体验。\n擅长将模糊需求拆解为可落地的技术方案，能够独立推进从需求沟通、界面实现、联调测试到交付验证的完整流程。\n近期专注于编辑器类产品、低代码搭建与工程化体系建设，重视可维护性、性能与协作效率，期待在更具挑战的业务中持续成长。',
+    smartOnePage: false,
   };
 }

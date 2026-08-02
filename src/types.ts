@@ -57,6 +57,7 @@ export interface ResumeData {
   skillGroups: SkillGroup[];
   skillText: string;
   summary: string;
+  smartOnePage: boolean;
 }
 
 export interface ResumeDocument {

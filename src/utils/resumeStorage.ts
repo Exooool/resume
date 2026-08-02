@@ -127,6 +127,7 @@ function normalizeResumeData(value: unknown): ResumeData {
     skillGroups: Array.isArray(source.skillGroups) ? source.skillGroups : fallback.skillGroups,
     skillText: typeof source.skillText === 'string' ? source.skillText : fallback.skillText,
     summary: typeof source.summary === 'string' ? source.summary : fallback.summary,
+    smartOnePage: Boolean(source.smartOnePage),
   };
 }
 

@@ -32,6 +32,7 @@ const {
   previewBlocks,
   pageCountLabel,
   exportingType,
+  spaceStyle,
   addEducation,
   removeEducation,
   addProject,
@@ -180,6 +181,7 @@ function fillDemoData() {
         :template-id="resume.templateId"
         :page-count-label="pageCountLabel"
         :exporting-type="exportingType"
+        :space-style="spaceStyle"
         :compact="isCompactLayout"
         :collect-page-ref="collectPageRef"
         :set-measure-ref="setMeasureRef"
