@@ -40,7 +40,12 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="frameRef" class="resume-list-card-preview" aria-hidden="true">
+  <div
+    ref="frameRef"
+    class="resume-list-card-preview"
+    aria-hidden="true"
+    :style="scale > 0 ? { height: `${A4_PAGE_HEIGHT * scale}px` } : undefined"
+  >
     <div
       class="resume-list-card-preview-inner"
       :style="{

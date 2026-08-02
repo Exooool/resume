@@ -22,6 +22,68 @@ export function createBlankResume(): ResumeData {
   };
 }
 
+export function createTemplateChooserSample(): ResumeData {
+  return {
+    templateId: 'classic',
+    basic: {
+      name: '李明',
+      title: '前端开发工程师',
+      phone: '138 0000 0000',
+      email: 'liming@example.com',
+      location: '上海',
+      website: 'liming.dev',
+      github: 'github.com/liming',
+    },
+    education: [
+      {
+        id: makeId('edu'),
+        school: '上海交通大学',
+        degree: '硕士',
+        major: '软件工程',
+        city: '上海',
+        period: ['2022.09', '2025.06'],
+        details: ['研究方向：前端工程化与低代码平台。'],
+      },
+    ],
+    projects: [
+      {
+        id: makeId('project'),
+        name: '企业级简历管理平台',
+        role: '前端负责人',
+        period: ['2024.09', '2025.03'],
+        stack: 'Vue 3 / TypeScript / Vite',
+        highlights: [
+          '负责编辑器、实时预览和导出流程。',
+          '实现 A4 自动分页与多格式导出。',
+        ],
+      },
+      {
+        id: makeId('project'),
+        name: '低代码表单搭建系统',
+        role: '核心开发',
+        period: ['2024.01', '2024.08'],
+        stack: 'Vue 3 / Pinia / Element Plus',
+        highlights: ['设计拖拽式表单设计器，支持联动规则配置。'],
+      },
+    ],
+    skillMode: 'groups',
+    skillGroups: [
+      {
+        id: makeId('skill'),
+        label: '前端',
+        skills: ['Vue 3', 'TypeScript', 'Vite'],
+      },
+      {
+        id: makeId('skill'),
+        label: '工程化',
+        skills: ['Git', 'CI/CD', 'Vitest'],
+      },
+    ],
+    skillText: '前端：Vue 3 / TypeScript / Vite\n工程化：Git / CI/CD / Vitest',
+    summary: '熟悉 Vue 技术栈和复杂表单场景，关注代码质量与用户体验。',
+  };
+}
+
 export function createDefaultResume(): ResumeData {
   return {
     templateId: 'classic',

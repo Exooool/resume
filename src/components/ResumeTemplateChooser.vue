@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { Check } from '@lucide/vue';
 import { NButton, NIcon } from 'naive-ui';
-import { onBeforeUnmount, ref } from 'vue';
+import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { createTemplateChooserSample } from '../data/defaultResume';
 import { resumeTemplateOptions } from '../data/resumeTemplates';
 import type { ResumeTemplateId } from '../types';
+import { createPreviewBlocks } from '../utils/resume';
+import ResumeListThumbnail from './ResumeListThumbnail.vue';
 
 defineProps<{
   selectedTemplateId: ResumeTemplateId;
@@ -14,6 +17,9 @@ const emit = defineEmits<{
   confirm: [];
 }>();
 
+const previewBlocks = createPreviewBlocks(createTemplateChooserSample());
+const isCompactLayout = ref(false);
+
 const trackRef = ref<HTMLElement | null>(null);
 const isDragging = ref(false);
 const dragStartX = ref(0);
@@ -21,10 +27,20 @@ const dragStartScrollLeft = ref(0);
 const shouldIgnoreClick = ref(false);
 const wheelScrollDuration = 180;
 
+const COMPACT_QUERY = '(max-width: 1020px)';
+let compactMedia: MediaQueryList | null = null;
 let wheelAnimationFrame = 0;
 let wheelAnimationStartedAt = 0;
 let wheelAnimationStartLeft = 0;
 let wheelAnimationTargetLeft = 0;
+
+function syncCompactLayout() {
+  isCompactLayout.value = Boolean(compactMedia?.matches);
+  if (isCompactLayout.value) {
+    cancelWheelScrollAnimation();
+    isDragging.value = false;
+  }
+}
 
 function cancelWheelScrollAnimation() {
   if (wheelAnimationFrame) {
@@ -74,7 +90,7 @@ function startWheelScrollAnimation(targetScrollLeft: number) {
 }
 
 function startDrag(event: PointerEvent) {
-  if (event.button !== 0 || !trackRef.value) {
+  if (isCompactLayout.value || event.button !== 0 || !trackRef.value) {
     return;
   }
 
@@ -86,7 +102,7 @@ function startDrag(event: PointerEvent) {
 }
 
 function dragTemplates(event: PointerEvent) {
-  if (!isDragging.value || !trackRef.value) {
+  if (isCompactLayout.value || !isDragging.value || !trackRef.value) {
     return;
   }
 
@@ -102,7 +118,7 @@ function stopDrag() {
 }
 
 function scrollTemplates(event: WheelEvent) {
-  if (!trackRef.value) {
+  if (isCompactLayout.value || !trackRef.value) {
     return;
   }
 
@@ -141,7 +157,16 @@ function selectTemplate(event: MouseEvent, templateId: ResumeTemplateId) {
   emit('selectTemplate', templateId);
 }
 
-onBeforeUnmount(cancelWheelScrollAnimation);
+onMounted(() => {
+  compactMedia = window.matchMedia(COMPACT_QUERY);
+  syncCompactLayout();
+  compactMedia.addEventListener('change', syncCompactLayout);
+});
+
+onBeforeUnmount(() => {
+  compactMedia?.removeEventListener('change', syncCompactLayout);
+  cancelWheelScrollAnimation();
+});
 </script>
 
 <template>
@@ -175,19 +200,11 @@ onBeforeUnmount(cancelWheelScrollAnimation);
         <span class="template-selected-badge">
           <n-icon :component="Check" />
         </span>
-        <span class="template-option-preview" :class="`template-preview-${template.value}`">
-          <span class="template-preview-paper">
-            <span class="preview-head">
-              <i></i>
-              <b></b>
-            </span>
-            <span class="preview-section"></span>
-            <span class="preview-line long"></span>
-            <span class="preview-line"></span>
-            <span class="preview-section"></span>
-            <span class="preview-line long"></span>
-            <span class="preview-line short"></span>
-          </span>
+        <span class="template-option-preview">
+          <ResumeListThumbnail
+            :blocks="previewBlocks"
+            :template-id="template.value"
+          />
         </span>
         <strong>{{ template.label }}</strong>
         <small>{{ template.description }}</small>

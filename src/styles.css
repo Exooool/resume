@@ -559,11 +559,13 @@ textarea {
   padding: 12px 30px 42px;
   overflow-x: auto;
   overflow-y: hidden;
+  overscroll-behavior: contain;
   cursor: grab;
   touch-action: pan-x;
   scrollbar-width: none;
   user-select: none;
   -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
 }
 
 .template-drawer-track::-webkit-scrollbar {
@@ -577,9 +579,13 @@ textarea {
 .template-option-card {
   position: relative;
   display: grid;
-  flex: 0 0 280px;
-  grid-template-rows: minmax(0, 1fr) auto auto;
+  flex: 0 0 auto;
+  align-self: stretch;
+  grid-template-rows: auto auto auto;
+  align-content: start;
   gap: 8px;
+  width: auto;
+  aspect-ratio: 280 / 450;
   min-width: 0;
   min-height: 0;
   padding: 12px;
@@ -589,6 +595,7 @@ textarea {
   color: #1d2a32;
   cursor: pointer;
   text-align: left;
+  box-sizing: border-box;
   transition:
     border-color 0.18s ease,
     box-shadow 0.18s ease,
@@ -637,211 +644,23 @@ textarea {
 }
 
 .template-option-preview {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 0;
-  padding: 12px;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
   border-radius: 6px;
   background: #edf2f1;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
-.template-preview-paper {
-  position: relative;
-  display: grid;
-  align-content: start;
-  flex: 0 0 auto;
-  gap: 8px;
-  width: min(100%, 164px);
-  height: auto;
-  aspect-ratio: 210 / 297;
-  padding: 18px;
-  background: #ffffff;
-  box-shadow: 0 8px 22px rgba(26, 42, 50, 0.13);
-}
-
-.preview-head {
-  display: grid;
-  gap: 8px;
-  padding-bottom: 10px;
-  border-bottom: 2px solid #203a43;
-}
-
-.preview-head i,
-.preview-head b,
-.preview-line,
-.preview-section {
-  display: block;
-}
-
-.preview-head i {
-  width: 42%;
-  height: 14px;
-  background: #1c2f36;
-}
-
-.preview-head b {
-  width: 34%;
-  height: 8px;
-  background: #12715b;
-}
-
-.preview-section {
+.template-option-preview .resume-list-card-preview {
   width: 100%;
-  height: 2px;
-  margin-top: 4px;
-  background: #b9c6c2;
-}
-
-.preview-line {
-  width: 72%;
-  height: 6px;
-  background: #d9e3e0;
-}
-
-.preview-line.long {
-  width: 92%;
-}
-
-.preview-line.short {
-  width: 54%;
-}
-
-.template-preview-fresh .template-preview-paper {
-  padding-top: 0;
-}
-
-.template-preview-fresh .preview-head {
-  margin: 0 -18px 2px;
-  padding: 18px;
+  aspect-ratio: 210 / 297;
+  height: auto;
   border-bottom: 0;
-  background: #eef7f4;
-}
-
-.template-preview-fresh .preview-section {
-  border-left: 5px solid #0f7a62;
-}
-
-.template-preview-compact .template-preview-paper {
-  gap: 6px;
-  padding: 14px;
-}
-
-.template-preview-compact .preview-head {
-  gap: 5px;
-  padding-bottom: 7px;
-}
-
-.template-preview-compact .preview-line {
-  height: 5px;
-}
-
-.template-preview-sidebar .template-preview-paper {
-  padding-left: 26px;
-}
-
-.template-preview-sidebar .template-preview-paper::before {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 8px;
-  background: #12715b;
-  content: "";
-}
-
-.template-preview-sidebar .preview-head {
-  border-bottom-width: 1px;
-}
-
-.template-preview-slate .template-preview-paper {
-  border-top: 8px solid #315f7d;
-  background: #fbfdfe;
-}
-
-.template-preview-slate .preview-head {
-  border-bottom-color: #315f7d;
-}
-
-.template-preview-slate .preview-head b,
-.template-preview-slate .preview-section {
-  background: #5d8ea6;
-}
-
-.template-preview-ink .template-preview-paper {
-  border: 1px solid #1b2429;
-  box-shadow: 0 8px 22px rgba(18, 24, 28, 0.15);
-}
-
-.template-preview-ink .preview-head {
-  border-bottom-color: #111820;
-}
-
-.template-preview-ink .preview-head b,
-.template-preview-ink .preview-section {
-  background: #111820;
-}
-
-.template-preview-cards .template-preview-paper {
-  gap: 7px;
-  background: #fbfcfb;
-}
-
-.template-preview-cards .preview-head,
-.template-preview-cards .preview-section {
   border-radius: 4px;
-  background: #edf4f1;
-}
-
-.template-preview-cards .preview-head {
-  padding: 12px;
-  border-bottom: 0;
-}
-
-.template-preview-timeline .template-preview-paper {
-  padding-left: 30px;
-}
-
-.template-preview-timeline .template-preview-paper::before {
-  position: absolute;
-  top: 78px;
-  bottom: 20px;
-  left: 20px;
-  width: 2px;
-  background: #9bb7ad;
-  content: "";
-}
-
-.template-preview-timeline .preview-section {
-  position: relative;
-  background: #12715b;
-}
-
-.template-preview-timeline .preview-section::before {
-  position: absolute;
-  top: -3px;
-  left: -15px;
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: #12715b;
-  content: "";
-}
-
-.template-preview-minimal .template-preview-paper {
-  gap: 10px;
-  padding: 22px;
-  box-shadow: 0 8px 22px rgba(26, 42, 50, 0.08);
-}
-
-.template-preview-minimal .preview-head {
-  border-bottom: 1px solid #d7dfdc;
-}
-
-.template-preview-minimal .preview-head b,
-.template-preview-minimal .preview-section {
-  background: #a8b7b2;
+  box-shadow: 0 6px 16px rgba(26, 42, 50, 0.1);
 }
 
 .template-drawer-footer {
@@ -1769,11 +1588,68 @@ textarea {
   }
 
   .template-drawer-track {
-    padding: 8px 16px 28px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    align-items: start;
+    gap: 14px;
+    padding: 8px 16px 20px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    cursor: default;
+    touch-action: pan-y;
+    scrollbar-width: thin;
+    scrollbar-color: #b7c9c2 transparent;
+    user-select: auto;
+  }
+
+  .template-drawer-track::-webkit-scrollbar {
+    display: block;
+    width: 6px;
+  }
+
+  .template-drawer-track::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .template-drawer-track::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: #b7c9c2;
+  }
+
+  .template-drawer-track.is-dragging {
+    cursor: default;
   }
 
   .template-option-card {
-    flex-basis: 220px;
+    flex: none;
+    align-self: start;
+    width: 100%;
+    height: max-content;
+    min-height: auto;
+    aspect-ratio: unset;
+    overflow: hidden;
+  }
+
+  .template-option-card.is-selected {
+    transform: none;
+  }
+
+  .template-option-preview .resume-list-card-preview {
+    aspect-ratio: auto;
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1020px) {
+  .template-drawer-track {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .template-drawer-track {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 }
 
