@@ -7,11 +7,13 @@ import ResumeFormPanel from '../components/ResumeFormPanel.vue';
 import ResumePreviewPanel from '../components/ResumePreviewPanel.vue';
 import ResumeTemplateChooser from '../components/ResumeTemplateChooser.vue';
 import { useResumeEditor } from '../composables/useResumeEditor';
-import { createBlankResume } from '../data/defaultResume';
+import { createBlankResume, createDefaultResume } from '../data/defaultResume';
 import type { ResumeTemplateId } from '../types';
+import { cloneResumeData } from '../utils/resume';
 import { getResumeDocument, updateResumeDocument } from '../utils/resumeStorage';
 
 const COMPACT_QUERY = '(max-width: 1020px)';
+const isDev = import.meta.env.DEV;
 
 const route = useRoute();
 const router = useRouter();
@@ -123,6 +125,18 @@ function backToList() {
 function setMobilePane(pane: 'edit' | 'preview') {
   mobilePane.value = pane;
 }
+
+function fillDemoData() {
+  const demo = cloneResumeData(createDefaultResume());
+  resume.templateId = demo.templateId;
+  resume.basic = demo.basic;
+  resume.education = demo.education;
+  resume.projects = demo.projects;
+  resume.skillMode = demo.skillMode;
+  resume.skillGroups = demo.skillGroups;
+  resume.skillText = demo.skillText;
+  resume.summary = demo.summary;
+}
 </script>
 
 <template>
@@ -149,8 +163,10 @@ function setMobilePane(pane: 'edit' | 'preview') {
         :resume="resume"
         :resume-name="resumeName"
         :compact="isCompactLayout"
+        :show-demo-fill="isDev"
         @back-to-list="backToList"
         @open-template-chooser="openTemplateChooser"
+        @fill-demo="fillDemoData"
         @add-education="addEducation"
         @remove-education="removeEducation"
         @add-project="addProject"

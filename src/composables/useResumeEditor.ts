@@ -127,37 +127,365 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
     }
 
     const nodes = Array.from(source.children) as HTMLElement[];
-    const heights = nodes.map(getOuterHeight);
     const nextPageSet: ResumeBlock[][] = [];
     let currentPage: ResumeBlock[] = [];
     let usedHeight = 0;
+    let sliceSeq = 0;
 
-    blocks.forEach((block, index) => {
-      const blockHeight = Math.ceil(heights[index] || 0);
-      const nextHeight = Math.ceil(heights[index + 1] || 0);
-      const shouldKeepHeadingWithNext =
-        block.kind === 'section' &&
-        currentPage.length > 0 &&
-        usedHeight + blockHeight + nextHeight > PREVIEW_CONTENT_HEIGHT;
+    function pushPage() {
+      if (!currentPage.length) {
+        return;
+      }
 
-      if (
-        currentPage.length > 0 &&
-        (usedHeight + blockHeight > PREVIEW_CONTENT_HEIGHT || shouldKeepHeadingWithNext)
-      ) {
-        nextPageSet.push(currentPage);
-        currentPage = [];
-        usedHeight = 0;
+      nextPageSet.push(currentPage);
+      currentPage = [];
+      usedHeight = 0;
+    }
+
+    function appendBlock(block: ResumeBlock, height: number) {
+      const blockHeight = Math.ceil(height);
+      if (currentPage.length > 0 && usedHeight + blockHeight > PREVIEW_CONTENT_HEIGHT) {
+        pushPage();
       }
 
       currentPage.push(block);
       usedHeight += blockHeight;
-    });
-
-    if (currentPage.length) {
-      nextPageSet.push(currentPage);
     }
 
+    blocks.forEach((block, index) => {
+      const node = nodes[index];
+      if (!node) {
+        return;
+      }
+
+      const blockHeight = getOuterHeight(node);
+
+      if (block.kind === 'section') {
+        const nextNode = nodes[index + 1];
+        const nextPartHeight = nextNode
+          ? Math.min(estimateFirstContentHeight(nextNode, blocks[index + 1]), 72)
+          : 0;
+
+        if (
+          currentPage.length > 0 &&
+          usedHeight + blockHeight + nextPartHeight > PREVIEW_CONTENT_HEIGHT
+        ) {
+          pushPage();
+        }
+
+        appendBlock(block, blockHeight);
+        return;
+      }
+
+      if (block.kind === 'education' || block.kind === 'project') {
+        paginateEntryBlock(block, node);
+        return;
+      }
+
+      if (block.kind === 'skills') {
+        paginateSkillsBlock(block, node);
+        return;
+      }
+
+      if (block.kind === 'summary' || block.kind === 'skillsText') {
+        paginateTextBlock(block, node);
+        return;
+      }
+
+      appendBlock(block, blockHeight);
+    });
+
+    pushPage();
     pages.value = nextPageSet.length ? nextPageSet : [[]];
+
+    function paginateEntryBlock(
+      block: Extract<ResumeBlock, { kind: 'education' | 'project' }>,
+      node: HTMLElement,
+    ) {
+      const parts = measureEntryParts(node);
+      if (!parts.length) {
+        appendBlock(block, getOuterHeight(node));
+        return;
+      }
+
+      let showTopline = false;
+      let showMeta = false;
+      let itemIndexes: number[] = [];
+      let sliceHeight = 0;
+
+      const flushSlice = () => {
+        if (!showTopline && !showMeta && itemIndexes.length === 0) {
+          return;
+        }
+
+        sliceSeq += 1;
+        const slicedBlock =
+          block.kind === 'education'
+            ? ({
+                ...block,
+                id: `${block.id}__${sliceSeq}`,
+                showTopline,
+                showMeta,
+                detailIndexes: [...itemIndexes],
+              } satisfies ResumeBlock)
+            : ({
+                ...block,
+                id: `${block.id}__${sliceSeq}`,
+                showTopline,
+                showMeta,
+                highlightIndexes: [...itemIndexes],
+              } satisfies ResumeBlock);
+
+        appendBlock(slicedBlock, sliceHeight);
+        showTopline = false;
+        showMeta = false;
+        itemIndexes = [];
+        sliceHeight = 0;
+      };
+
+      parts.forEach((part) => {
+        const hasSliceContent = showTopline || showMeta || itemIndexes.length > 0;
+        if (
+          hasSliceContent &&
+          usedHeight + sliceHeight + part.height > PREVIEW_CONTENT_HEIGHT
+        ) {
+          flushSlice();
+          if (currentPage.length > 0 && usedHeight + part.height > PREVIEW_CONTENT_HEIGHT) {
+            pushPage();
+          }
+        }
+
+        if (part.type === 'topline') {
+          showTopline = true;
+        } else if (part.type === 'meta') {
+          showMeta = true;
+        } else {
+          itemIndexes.push(part.index);
+        }
+
+        sliceHeight += part.height;
+      });
+
+      flushSlice();
+    }
+
+    function paginateSkillsBlock(
+      block: Extract<ResumeBlock, { kind: 'skills' }>,
+      node: HTMLElement,
+    ) {
+      const parts = measureSkillParts(node);
+      if (!parts.length) {
+        appendBlock(block, getOuterHeight(node));
+        return;
+      }
+
+      let groupIndexes: number[] = [];
+      let sliceHeight = 0;
+
+      const flushSlice = () => {
+        if (!groupIndexes.length) {
+          return;
+        }
+
+        sliceSeq += 1;
+        appendBlock(
+          {
+            ...block,
+            id: `${block.id}__${sliceSeq}`,
+            groupIndexes: [...groupIndexes],
+          },
+          sliceHeight,
+        );
+        groupIndexes = [];
+        sliceHeight = 0;
+      };
+
+      parts.forEach((part) => {
+        if (
+          groupIndexes.length > 0 &&
+          usedHeight + sliceHeight + part.height > PREVIEW_CONTENT_HEIGHT
+        ) {
+          flushSlice();
+          if (currentPage.length > 0 && usedHeight + part.height > PREVIEW_CONTENT_HEIGHT) {
+            pushPage();
+          }
+        }
+
+        groupIndexes.push(part.index);
+        sliceHeight += part.height;
+      });
+
+      flushSlice();
+    }
+
+    function paginateTextBlock(
+      block: Extract<ResumeBlock, { kind: 'summary' | 'skillsText' }>,
+      node: HTMLElement,
+    ) {
+      const parts = measureTextParts(node, block.text);
+      if (parts.length <= 1) {
+        appendBlock(block, getOuterHeight(node));
+        return;
+      }
+
+      let texts: string[] = [];
+      let sliceHeight = 0;
+
+      const flushSlice = () => {
+        if (!texts.length) {
+          return;
+        }
+
+        sliceSeq += 1;
+        appendBlock(
+          {
+            ...block,
+            id: `${block.id}__${sliceSeq}`,
+            text: texts.join('\n'),
+          },
+          sliceHeight,
+        );
+        texts = [];
+        sliceHeight = 0;
+      };
+
+      parts.forEach((part) => {
+        if (
+          texts.length > 0 &&
+          usedHeight + sliceHeight + part.height > PREVIEW_CONTENT_HEIGHT
+        ) {
+          flushSlice();
+          if (currentPage.length > 0 && usedHeight + part.height > PREVIEW_CONTENT_HEIGHT) {
+            pushPage();
+          }
+        }
+
+        texts.push(part.text);
+        sliceHeight += part.height;
+      });
+
+      flushSlice();
+    }
+  }
+
+  function measureEntryParts(node: HTMLElement) {
+    const style = window.getComputedStyle(node);
+    const marginTop = parseFloat(style.marginTop || '0');
+    const marginBottom = parseFloat(style.marginBottom || '0');
+    const parts: Array<
+      | { type: 'topline'; height: number }
+      | { type: 'meta'; height: number }
+      | { type: 'item'; index: number; height: number }
+    > = [];
+
+    const topline = node.querySelector('.entry-topline');
+    if (topline instanceof HTMLElement) {
+      parts.push({ type: 'topline', height: getOuterHeight(topline) });
+    }
+
+    const meta = node.querySelector('.entry-meta');
+    if (meta instanceof HTMLElement) {
+      parts.push({ type: 'meta', height: getOuterHeight(meta) });
+    }
+
+    Array.from(node.querySelectorAll('.resume-list > li')).forEach((item, index) => {
+      if (item instanceof HTMLElement) {
+        parts.push({ type: 'item', index, height: getOuterHeight(item) });
+      }
+    });
+
+    if (!parts.length) {
+      return parts;
+    }
+
+    parts[0].height += marginTop;
+    parts[parts.length - 1].height += marginBottom;
+
+    const list = node.querySelector('.resume-list');
+    if (list instanceof HTMLElement) {
+      const listStyle = window.getComputedStyle(list);
+      const listExtra =
+        parseFloat(listStyle.marginTop || '0') + parseFloat(listStyle.paddingTop || '0');
+      const firstItem = parts.find((part) => part.type === 'item');
+      if (firstItem) {
+        firstItem.height += listExtra;
+      }
+    }
+
+    return parts;
+  }
+
+  function measureSkillParts(node: HTMLElement) {
+    const style = window.getComputedStyle(node);
+    const marginTop = parseFloat(style.marginTop || '0');
+    const marginBottom = parseFloat(style.marginBottom || '0');
+    const parts = Array.from(node.querySelectorAll('.skill-row')).flatMap((row, index) => {
+      if (!(row instanceof HTMLElement)) {
+        return [];
+      }
+
+      return [{ index, height: getOuterHeight(row) }];
+    });
+
+    if (!parts.length) {
+      return parts;
+    }
+
+    parts[0].height += marginTop;
+    parts[parts.length - 1].height += marginBottom;
+    return parts;
+  }
+
+  function measureTextParts(node: HTMLElement, text: string) {
+    const paragraphs = Array.from(node.querySelectorAll('p'));
+    const lines = text
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    if (!paragraphs.length) {
+      return [{ text, height: getOuterHeight(node) }];
+    }
+
+    const style = window.getComputedStyle(node);
+    const marginTop = parseFloat(style.marginTop || '0');
+    const marginBottom = parseFloat(style.marginBottom || '0');
+
+    const parts = paragraphs.map((paragraph, index) => ({
+      text: lines[index] || paragraph.textContent?.trim() || '',
+      height: getOuterHeight(paragraph),
+    }));
+
+    if (!parts.length) {
+      return parts;
+    }
+
+    parts[0].height += marginTop;
+    parts[parts.length - 1].height += marginBottom;
+    return parts.filter((part) => part.text);
+  }
+
+  function estimateFirstContentHeight(node: HTMLElement, block?: ResumeBlock) {
+    if (!block) {
+      return getOuterHeight(node);
+    }
+
+    if (block.kind === 'education' || block.kind === 'project') {
+      const parts = measureEntryParts(node);
+      return parts[0]?.height || getOuterHeight(node);
+    }
+
+    if (block.kind === 'skills') {
+      const parts = measureSkillParts(node);
+      return parts[0]?.height || getOuterHeight(node);
+    }
+
+    if (block.kind === 'summary' || block.kind === 'skillsText') {
+      const parts = measureTextParts(node, block.text);
+      return parts[0]?.height || getOuterHeight(node);
+    }
+
+    return getOuterHeight(node);
   }
 
   function getOuterHeight(element: HTMLElement) {

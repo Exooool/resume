@@ -1105,6 +1105,14 @@ textarea {
   color: #26343b;
 }
 
+.entry-block.is-continuation {
+  margin-top: 0;
+}
+
+.entry-block.is-continuation .resume-list {
+  margin-top: 0;
+}
+
 .entry-topline {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

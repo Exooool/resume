@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowLeft, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, LayoutGrid, Plus, Trash2 } from '@lucide/vue';
+import { ArrowLeft, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, FlaskConical, LayoutGrid, Plus, Trash2 } from '@lucide/vue';
 import {
   NButton,
   NCard,
@@ -23,11 +23,13 @@ defineProps<{
   resume: ResumeData;
   resumeName: string;
   compact?: boolean;
+  showDemoFill?: boolean;
 }>();
 
 const emit = defineEmits<{
   backToList: [];
   openTemplateChooser: [];
+  fillDemo: [];
   addEducation: [];
   removeEducation: [index: number];
   addProject: [];
@@ -88,6 +90,17 @@ function expandAll(items: Array<{ id: string }>) {
         <h1>{{ resumeName }}</h1>
       </div>
       <div class="panel-header-actions">
+        <n-button
+          v-if="showDemoFill"
+          secondary
+          type="warning"
+          @click="emit('fillDemo')"
+        >
+          <template #icon>
+            <n-icon :component="FlaskConical" />
+          </template>
+          <span class="panel-action-label">{{ compact ? '示例' : '模拟数据' }}</span>
+        </n-button>
         <n-button secondary @click="emit('backToList')">
           <template #icon>
             <n-icon :component="ArrowLeft" />

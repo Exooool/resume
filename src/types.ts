@@ -70,8 +70,27 @@ export interface ResumeDocument {
 export type ResumeBlock =
   | { id: string; kind: 'header'; basic: BasicInfo }
   | { id: string; kind: 'section'; title: string }
-  | { id: string; kind: 'education'; item: EducationItem }
-  | { id: string; kind: 'project'; item: ProjectItem }
-  | { id: string; kind: 'skills'; groups: SkillGroup[] }
+  | {
+      id: string;
+      kind: 'education';
+      item: EducationItem;
+      showTopline?: boolean;
+      showMeta?: boolean;
+      detailIndexes?: number[];
+    }
+  | {
+      id: string;
+      kind: 'project';
+      item: ProjectItem;
+      showTopline?: boolean;
+      showMeta?: boolean;
+      highlightIndexes?: number[];
+    }
+  | {
+      id: string;
+      kind: 'skills';
+      groups: SkillGroup[];
+      groupIndexes?: number[];
+    }
   | { id: string; kind: 'skillsText'; text: string }
   | { id: string; kind: 'summary'; text: string };

@@ -26,6 +26,75 @@ const textParagraphs = computed(() => {
     .filter(Boolean);
 });
 
+const showTopline = computed(() => {
+  if (props.block.kind !== 'education' && props.block.kind !== 'project') {
+    return false;
+  }
+
+  return props.block.showTopline !== false;
+});
+
+const showMeta = computed(() => {
+  if (props.block.kind !== 'education' && props.block.kind !== 'project') {
+    return false;
+  }
+
+  return props.block.showMeta !== false;
+});
+
+const educationDetails = computed(() => {
+  if (props.block.kind !== 'education') {
+    return [];
+  }
+
+  const details = props.block.item.details.filter(Boolean);
+  if (!props.block.detailIndexes) {
+    return details;
+  }
+
+  return props.block.detailIndexes
+    .map((index) => details[index])
+    .filter((detail): detail is string => Boolean(detail));
+});
+
+const projectHighlights = computed(() => {
+  if (props.block.kind !== 'project') {
+    return [];
+  }
+
+  const highlights = props.block.item.highlights.filter(Boolean);
+  if (!props.block.highlightIndexes) {
+    return highlights;
+  }
+
+  return props.block.highlightIndexes
+    .map((index) => highlights[index])
+    .filter((highlight): highlight is string => Boolean(highlight));
+});
+
+const skillGroups = computed(() => {
+  if (props.block.kind !== 'skills') {
+    return [];
+  }
+
+  const block = props.block;
+  if (!block.groupIndexes) {
+    return block.groups;
+  }
+
+  return block.groupIndexes
+    .map((index) => block.groups[index])
+    .filter((group): group is NonNullable<typeof group> => Boolean(group));
+});
+
+const isEntryContinuation = computed(() => {
+  if (props.block.kind !== 'education' && props.block.kind !== 'project') {
+    return false;
+  }
+
+  return props.block.showTopline === false && props.block.showMeta === false;
+});
+
 function formatPeriod(period: PeriodRange | string, fallback: string) {
   if (typeof period === 'string') {
     return period.trim() || fallback;
@@ -59,39 +128,47 @@ function formatPeriod(period: PeriodRange | string, fallback: string) {
     <span>{{ block.title }}</span>
   </div>
 
-  <article v-else-if="block.kind === 'education'" class="resume-block entry-block">
-    <div class="entry-topline">
+  <article
+    v-else-if="block.kind === 'education'"
+    class="resume-block entry-block"
+    :class="{ 'is-continuation': isEntryContinuation }"
+  >
+    <div v-if="showTopline" class="entry-topline">
       <h3>{{ block.item.school || '学校名称' }}</h3>
       <time>{{ formatPeriod(block.item.period, '起止时间') }}</time>
     </div>
-    <div class="entry-meta">
+    <div v-if="showMeta" class="entry-meta">
       <span>{{ block.item.degree || '学历' }}</span>
       <span>{{ block.item.major || '专业' }}</span>
       <span v-if="block.item.city">{{ block.item.city }}</span>
     </div>
-    <ul v-if="block.item.details.some(Boolean)" class="resume-list">
-      <li v-for="detail in block.item.details.filter(Boolean)" :key="detail">{{ detail }}</li>
+    <ul v-if="educationDetails.length" class="resume-list">
+      <li v-for="detail in educationDetails" :key="detail">{{ detail }}</li>
     </ul>
   </article>
 
-  <article v-else-if="block.kind === 'project'" class="resume-block entry-block">
-    <div class="entry-topline">
+  <article
+    v-else-if="block.kind === 'project'"
+    class="resume-block entry-block"
+    :class="{ 'is-continuation': isEntryContinuation }"
+  >
+    <div v-if="showTopline" class="entry-topline">
       <h3>{{ block.item.name || '项目名称' }}</h3>
       <time>{{ formatPeriod(block.item.period, '项目时间') }}</time>
     </div>
-    <div class="entry-meta">
+    <div v-if="showMeta" class="entry-meta">
       <span>{{ block.item.role || '承担角色' }}</span>
       <span v-if="block.item.stack">{{ block.item.stack }}</span>
     </div>
-    <ul v-if="block.item.highlights.some(Boolean)" class="resume-list">
-      <li v-for="highlight in block.item.highlights.filter(Boolean)" :key="highlight">
+    <ul v-if="projectHighlights.length" class="resume-list">
+      <li v-for="highlight in projectHighlights" :key="highlight">
         {{ highlight }}
       </li>
     </ul>
   </article>
 
   <article v-else-if="block.kind === 'skills'" class="resume-block skills-block">
-    <div v-for="group in block.groups" :key="group.id" class="skill-row">
+    <div v-for="group in skillGroups" :key="group.id" class="skill-row">
       <strong>{{ group.label || '技能分类' }}</strong>
       <span>{{ group.skills.filter(Boolean).join(' / ') || '技能项' }}</span>
     </div>
