@@ -1,5 +1,18 @@
 <script setup lang="ts">
-import { ArrowLeft, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, FlaskConical, LayoutGrid, Plus, Settings2, Trash2 } from '@lucide/vue';
+import {
+  ArrowLeft,
+  ChevronDown,
+  ChevronRight,
+  ChevronsDownUp,
+  ChevronsUpDown,
+  FlaskConical,
+  ImagePlus,
+  LayoutGrid,
+  Plus,
+  Settings2,
+  Trash2,
+  UserRound,
+} from '@lucide/vue';
 import {
   NButton,
   NCard,
@@ -21,7 +34,7 @@ import {
 import { ref } from 'vue';
 import type { ResumeData } from '../types';
 
-defineProps<{
+const props = defineProps<{
   resume: ResumeData;
   resumeName: string;
   compact?: boolean;
@@ -52,6 +65,12 @@ const skillModeOptions = [
 ] as const;
 
 const collapsedIds = ref<Record<string, boolean>>({});
+const avatarInputRef = ref<HTMLInputElement | null>(null);
+const avatarUploadError = ref('');
+
+const MAX_AVATAR_FILE_SIZE = 10 * 1024 * 1024;
+const AVATAR_WIDTH = 400;
+const AVATAR_HEIGHT = 500;
 
 function isCollapsed(id: string) {
   return Boolean(collapsedIds.value[id]);
@@ -81,6 +100,102 @@ function expandAll(items: Array<{ id: string }>) {
     items.map((item) => item.id),
     false,
   );
+}
+
+function chooseAvatar() {
+  avatarInputRef.value?.click();
+}
+
+async function handleAvatarChange(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  input.value = '';
+
+  if (!file) {
+    return;
+  }
+
+  avatarUploadError.value = '';
+  if (!file.type.startsWith('image/')) {
+    avatarUploadError.value = '请选择有效的图片文件';
+    return;
+  }
+
+  if (file.size > MAX_AVATAR_FILE_SIZE) {
+    avatarUploadError.value = '头像图片不能超过 10 MB';
+    return;
+  }
+
+  try {
+    const image = await loadImage(file);
+    props.resume.basic.avatar = cropAvatar(image);
+  } catch {
+    avatarUploadError.value = '头像读取失败，请更换图片后重试';
+  }
+}
+
+function removeAvatar() {
+  props.resume.basic.avatar = '';
+  avatarUploadError.value = '';
+}
+
+function loadImage(file: File) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const image = new Image();
+
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('Failed to load avatar image'));
+    };
+    image.src = objectUrl;
+  });
+}
+
+function cropAvatar(image: HTMLImageElement) {
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  if (!context || !image.naturalWidth || !image.naturalHeight) {
+    throw new Error('Invalid avatar image');
+  }
+
+  canvas.width = AVATAR_WIDTH;
+  canvas.height = AVATAR_HEIGHT;
+
+  const targetRatio = AVATAR_WIDTH / AVATAR_HEIGHT;
+  const sourceRatio = image.naturalWidth / image.naturalHeight;
+  let sourceX = 0;
+  let sourceY = 0;
+  let sourceWidth = image.naturalWidth;
+  let sourceHeight = image.naturalHeight;
+
+  if (sourceRatio > targetRatio) {
+    sourceWidth = image.naturalHeight * targetRatio;
+    sourceX = (image.naturalWidth - sourceWidth) / 2;
+  } else {
+    sourceHeight = image.naturalWidth / targetRatio;
+    sourceY = (image.naturalHeight - sourceHeight) / 2;
+  }
+
+  context.fillStyle = '#ffffff';
+  context.fillRect(0, 0, AVATAR_WIDTH, AVATAR_HEIGHT);
+  context.drawImage(
+    image,
+    sourceX,
+    sourceY,
+    sourceWidth,
+    sourceHeight,
+    0,
+    0,
+    AVATAR_WIDTH,
+    AVATAR_HEIGHT,
+  );
+
+  return canvas.toDataURL('image/jpeg', 0.9);
 }
 </script>
 
@@ -142,6 +257,49 @@ function expandAll(items: Array<{ id: string }>) {
         <n-scrollbar class="editor-scrollbar">
           <div class="editor-tab-content">
             <n-form label-placement="top" class="form-stack">
+              <n-form-item label="个人头像" class="avatar-form-item">
+                <div class="avatar-editor">
+                  <div class="avatar-editor-preview">
+                    <img
+                      v-if="resume.basic.avatar"
+                      :src="resume.basic.avatar"
+                      alt="个人头像预览"
+                    />
+                    <n-icon v-else :component="UserRound" />
+                  </div>
+                  <div class="avatar-editor-controls">
+                    <input
+                      ref="avatarInputRef"
+                      class="avatar-file-input"
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      @change="handleAvatarChange"
+                    />
+                    <div class="avatar-editor-actions">
+                      <n-button secondary @click="chooseAvatar">
+                        <template #icon>
+                          <n-icon :component="ImagePlus" />
+                        </template>
+                        {{ resume.basic.avatar ? '更换头像' : '上传头像' }}
+                      </n-button>
+                      <n-button
+                        v-if="resume.basic.avatar"
+                        secondary
+                        type="error"
+                        @click="removeAvatar"
+                      >
+                        <template #icon>
+                          <n-icon :component="Trash2" />
+                        </template>
+                        移除
+                      </n-button>
+                    </div>
+                    <p v-if="avatarUploadError" class="avatar-upload-error" role="alert">
+                      {{ avatarUploadError }}
+                    </p>
+                  </div>
+                </div>
+              </n-form-item>
               <div class="form-grid">
                 <n-form-item label="姓名">
                   <n-input v-model:value="resume.basic.name" placeholder="请输入姓名" />

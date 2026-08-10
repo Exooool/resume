@@ -1,4 +1,5 @@
 export interface BasicInfo {
+  avatar: string;
   name: string;
   title: string;
   phone: string;

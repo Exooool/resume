@@ -5,6 +5,7 @@ export function createBlankResume(): ResumeData {
   return {
     templateId: 'classic',
     basic: {
+      avatar: '',
       name: '',
       title: '',
       phone: '',
@@ -27,6 +28,7 @@ export function createTemplateChooserSample(): ResumeData {
   return {
     templateId: 'classic',
     basic: {
+      avatar: '',
       name: '李明',
       title: '前端开发工程师',
       phone: '138 0000 0000',
@@ -90,6 +92,7 @@ export function createDefaultResume(): ResumeData {
   return {
     templateId: 'classic',
     basic: {
+      avatar: '',
       name: '李明',
       title: '前端开发工程师',
       phone: '138 0000 0000',

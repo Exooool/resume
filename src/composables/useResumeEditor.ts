@@ -581,13 +581,23 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4',
+        compress: true,
       });
 
       canvases.forEach((canvas, index) => {
         if (index > 0) {
           pdf.addPage();
         }
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, A4_WIDTH_MM, A4_HEIGHT_MM);
+        pdf.addImage(
+          canvas.toDataURL('image/png'),
+          'PNG',
+          0,
+          0,
+          A4_WIDTH_MM,
+          A4_HEIGHT_MM,
+          undefined,
+          'FAST',
+        );
       });
 
       pdf.save(`${fileBaseName()}.pdf`);

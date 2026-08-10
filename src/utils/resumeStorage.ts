@@ -120,6 +120,10 @@ function normalizeResumeData(value: unknown): ResumeData {
     basic: {
       ...fallback.basic,
       ...(source.basic ?? {}),
+      avatar:
+        typeof source.basic?.avatar === 'string'
+          ? source.basic.avatar
+          : fallback.basic.avatar,
     },
     education: Array.isArray(source.education) ? source.education : fallback.education,
     projects: Array.isArray(source.projects) ? source.projects : fallback.projects,

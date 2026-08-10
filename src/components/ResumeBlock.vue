@@ -114,10 +114,22 @@ function formatPeriod(period: PeriodRange | string, fallback: string) {
 </script>
 
 <template>
-  <article v-if="block.kind === 'header'" class="resume-block resume-header">
-    <div>
-      <h1>{{ block.basic.name || '你的姓名' }}</h1>
-      <p>{{ block.basic.title || '目标岗位' }}</p>
+  <article
+    v-if="block.kind === 'header'"
+    class="resume-block resume-header"
+    :class="{ 'has-avatar': Boolean(block.basic.avatar) }"
+  >
+    <div class="resume-identity">
+      <img
+        v-if="block.basic.avatar"
+        class="resume-avatar"
+        :src="block.basic.avatar"
+        alt="个人头像"
+      />
+      <div class="resume-identity-copy">
+        <h1>{{ block.basic.name || '你的姓名' }}</h1>
+        <p>{{ block.basic.title || '目标岗位' }}</p>
+      </div>
     </div>
     <ul class="contact-list">
       <li v-for="item in contactItems" :key="item">{{ item }}</li>
