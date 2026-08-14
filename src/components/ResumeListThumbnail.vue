@@ -63,3 +63,29 @@ onBeforeUnmount(() => {
     </div>
   </div>
 </template>
+
+<style lang="scss">
+.resume-list-card-preview {
+  position: relative;
+  aspect-ratio: 210 / 297;
+  overflow: hidden;
+  border-radius: 9px 9px 0 0;
+  border-bottom: 1px solid #e2ebe6;
+  background: #edf3f0;
+}
+
+.resume-list-card-preview-inner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+  pointer-events: none;
+}
+
+.resume-list-thumb-page {
+  width: 794px;
+  height: 1123px;
+  overflow: hidden;
+  box-shadow: none;
+}
+</style>

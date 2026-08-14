@@ -178,3 +178,136 @@ function updateScale(width: number) {
     </div>
   </section>
 </template>
+
+<style lang="scss">
+.preview-panel {
+  display: flex;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  max-height: none;
+  flex-direction: column;
+  background: #e7ebed;
+
+  .n-divider {
+    margin: 0;
+  }
+}
+
+.preview-toolbar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 22px 24px 16px;
+
+  h2 {
+    margin: 0;
+    overflow: hidden;
+    color: #17252c;
+    font-size: 22px;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.preview-scrollbar {
+  flex: 1;
+}
+
+.page-count {
+  margin: 0 0 8px;
+  color: #62717a;
+  font-size: 13px;
+}
+
+.preview-stage {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  padding: 18px 24px 36px;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.preview-fit {
+  flex: 0 0 auto;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.page-scale-clip {
+  width: 100%;
+  overflow: hidden;
+}
+
+.page-stack {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+  padding: 0;
+}
+
+.measurement {
+  position: fixed;
+  top: 0;
+  left: -9999px;
+  width: 794px;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.measure-page {
+  height: auto;
+  min-height: 1123px;
+  box-shadow: none;
+}
+
+@media (max-width: 1020px) {
+  .preview-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .preview-export-actions {
+    width: 100%;
+
+    .n-button {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+
+  .page-count {
+    margin: 0 0 8px;
+  }
+
+  .page-stack {
+    min-width: 0;
+    max-width: none;
+    padding: 0;
+  }
+
+  .preview-stage {
+    padding: 14px 16px 28px;
+    overflow-x: hidden;
+  }
+}
+
+@media (max-width: 620px) {
+  .preview-toolbar {
+    padding: 16px 16px 12px;
+
+    h2 {
+      font-size: 20px;
+    }
+  }
+}
+</style>

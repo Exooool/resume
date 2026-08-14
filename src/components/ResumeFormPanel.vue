@@ -686,3 +686,399 @@ function cropAvatar(image: HTMLImageElement) {
     </n-tabs>
   </aside>
 </template>
+
+<style lang="scss">
+.editor-panel {
+  display: flex;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-height: none;
+  flex-direction: column;
+  border-right: 1px solid #d7dedb;
+  background: #fbfcfb;
+}
+
+.panel-header {
+  display: flex;
+  flex-shrink: 0;
+  align-items: stretch;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 22px 24px 16px;
+
+  h1 {
+    margin: 0;
+    overflow: hidden;
+    color: #17252c;
+    font-size: 24px;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.panel-header-title {
+  min-width: 0;
+}
+
+.panel-header-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+
+  > .n-button,
+  > .panel-header-action-item {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .n-button {
+    width: 100%;
+    justify-content: center;
+    white-space: nowrap;
+  }
+}
+
+.panel-header-action-item {
+  display: flex;
+}
+
+.more-config-panel {
+  min-width: 180px;
+  padding: 4px 2px;
+}
+
+.smart-one-page-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: #31414b;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+
+.editor-scrollbar {
+  height: 100%;
+  min-width: 0;
+}
+
+.editor-tabs {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+
+  > .n-tabs-nav {
+    flex-shrink: 0;
+    padding: 0 24px;
+  }
+
+  .n-tabs-pane-wrapper {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .n-tab-pane {
+    height: 100%;
+    padding: 0 !important;
+  }
+}
+
+.editor-tab-content {
+  padding: 16px 24px 28px;
+  box-sizing: border-box;
+}
+
+.form-stack {
+  display: grid;
+  gap: 8px;
+}
+
+.avatar-form-item {
+  margin-bottom: 4px;
+}
+
+.avatar-editor {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.avatar-editor-preview {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 90px;
+  overflow: hidden;
+  border: 1px dashed #b9c9c2;
+  border-radius: 6px;
+  background: #f3f7f5;
+  color: #82938c;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .n-icon {
+    font-size: 28px;
+  }
+}
+
+.avatar-editor-controls {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+}
+
+.avatar-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.avatar-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.avatar-upload-error {
+  margin: 0;
+  color: #c23b3b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 12px;
+}
+
+.section-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.section-collapse-actions {
+  display: inline-flex;
+  align-items: stretch;
+  overflow: hidden;
+  border: 1px solid #cfd9d5;
+  border-radius: 999px;
+  background: #ffffff;
+}
+
+.section-collapse-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #5b6b66;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  + .section-collapse-btn {
+    border-left: 1px solid #cfd9d5;
+  }
+
+  &:hover {
+    background: #eef5f1;
+    color: #12715b;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #12715b;
+    outline-offset: -2px;
+  }
+
+  .n-icon {
+    font-size: 15px;
+  }
+}
+
+.skill-mode-form {
+  margin-bottom: 8px;
+}
+
+.skill-mode-control {
+  display: flex;
+  width: 100%;
+
+  .n-radio-button {
+    flex: 1;
+    text-align: center;
+  }
+}
+
+.date-range-picker {
+  width: 100%;
+
+  .n-date-picker-icon,
+  .n-base-clear {
+    flex: 0 0 auto;
+  }
+
+  .n-date-picker-input {
+    min-width: 0;
+  }
+}
+
+.wide-form-item,
+.date-range-form-item {
+  grid-column: 1 / -1;
+}
+
+.item-list {
+  display: grid;
+  gap: 14px;
+}
+
+.item-card-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.item-card.is-collapsed {
+  .n-card-header {
+    border-bottom: 0;
+  }
+
+  .n-card__content {
+    display: none;
+    padding: 0;
+  }
+}
+
+@media (max-width: 1020px) {
+  .panel-header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .panel-header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+
+    > .n-button,
+    > .panel-header-action-item {
+      flex: 1 1 calc(50% - 4px);
+    }
+
+    .n-button {
+      width: 100%;
+    }
+  }
+
+  .editor-tabs {
+    > .n-tabs-nav {
+      padding: 0 16px;
+    }
+
+    .n-tabs-nav {
+      width: 100%;
+      max-width: 100%;
+    }
+
+    .n-tabs-nav-scroll-wrapper {
+      overflow-x: auto !important;
+      overscroll-behavior-x: contain;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
+    }
+
+    .n-tabs-nav-scroll-content {
+      display: flex;
+      flex-wrap: nowrap;
+      width: max-content;
+      min-width: 100%;
+    }
+
+    .n-tabs-tab {
+      flex: 0 0 auto;
+      padding-left: 10px;
+      padding-right: 10px;
+    }
+
+    .form-stack,
+    .n-form {
+      max-width: 100%;
+      min-width: 0;
+    }
+  }
+
+  .editor-tab-content {
+    padding: 16px 16px 24px;
+  }
+
+  .is-compact .editor-scrollbar {
+    .n-scrollbar-container,
+    .n-scrollbar-content {
+      max-width: 100%;
+      min-width: 0;
+    }
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .avatar-editor {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 620px) {
+  .panel-header {
+    padding: 16px 16px 12px;
+
+    h1 {
+      font-size: 20px;
+    }
+  }
+
+  .panel-action-label {
+    display: inline;
+  }
+}
+</style>
