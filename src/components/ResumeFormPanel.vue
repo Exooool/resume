@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import {
+  ArrowUpDown,
   ChevronDown,
   ChevronRight,
   ChevronsDownUp,
   ChevronsUpDown,
+  GripVertical,
   ImagePlus,
   Plus,
   Trash2,
@@ -25,8 +27,15 @@ import {
   NTabPane,
   NTabs,
 } from 'naive-ui';
-import { computed, ref } from 'vue';
-import type { ResumeData, ResumeSectionId } from '../types';
+import { computed, ref, watch } from 'vue';
+import draggable from 'vuedraggable';
+import type {
+  EducationItem,
+  ProjectItem,
+  ResumeData,
+  ResumeSectionId,
+  WorkExperienceItem,
+} from '../types';
 
 const props = defineProps<{
   resume: ResumeData;
@@ -57,6 +66,39 @@ const skillModeOptions = [
 const collapsedIds = ref<Record<string, boolean>>({});
 const avatarInputRef = ref<HTMLInputElement | null>(null);
 const avatarUploadError = ref('');
+const educationReorderMode = ref(false);
+const workReorderMode = ref(false);
+const projectsReorderMode = ref(false);
+
+const draggableEducation = computed({
+  get: () => props.resume.education,
+  set: (items: EducationItem[]) => {
+    props.resume.education.splice(0, props.resume.education.length, ...items);
+  },
+});
+
+const draggableWorkExperience = computed({
+  get: () => props.resume.workExperience,
+  set: (items: WorkExperienceItem[]) => {
+    props.resume.workExperience.splice(0, props.resume.workExperience.length, ...items);
+  },
+});
+
+const draggableProjects = computed({
+  get: () => props.resume.projects,
+  set: (items: ProjectItem[]) => {
+    props.resume.projects.splice(0, props.resume.projects.length, ...items);
+  },
+});
+
+watch(
+  () => props.activeSection,
+  () => {
+    educationReorderMode.value = false;
+    workReorderMode.value = false;
+    projectsReorderMode.value = false;
+  },
+);
 
 const sectionLabels: Record<ResumeSectionId, string> = {
   basic: '基本信息',
@@ -101,6 +143,30 @@ function expandAll(items: Array<{ id: string }>) {
     items.map((item) => item.id),
     false,
   );
+}
+
+function getEducationLabel(item: EducationItem, index: number) {
+  return item.school.trim() || `教育经历 ${index + 1}`;
+}
+
+function getWorkLabel(item: WorkExperienceItem, index: number) {
+  return item.company.trim() || `工作经历 ${index + 1}`;
+}
+
+function getProjectLabel(item: ProjectItem, index: number) {
+  return item.name.trim() || `项目经历 ${index + 1}`;
+}
+
+function toggleEducationReorder() {
+  educationReorderMode.value = !educationReorderMode.value;
+}
+
+function toggleWorkReorder() {
+  workReorderMode.value = !workReorderMode.value;
+}
+
+function toggleProjectsReorder() {
+  projectsReorderMode.value = !projectsReorderMode.value;
 }
 
 function chooseAvatar() {
@@ -313,7 +379,12 @@ function cropAvatar(image: HTMLImageElement) {
         <n-scrollbar class="editor-scrollbar">
           <div class="editor-tab-content">
             <div class="section-actions">
-              <div class="section-collapse-actions" role="group" aria-label="折叠控制">
+              <div
+                v-if="!educationReorderMode"
+                class="section-collapse-actions"
+                role="group"
+                aria-label="折叠控制"
+              >
                 <button
                   type="button"
                   class="section-collapse-btn"
@@ -333,15 +404,53 @@ function cropAvatar(image: HTMLImageElement) {
                   <n-icon :component="ChevronsUpDown" />
                 </button>
               </div>
-              <n-button type="primary" secondary @click="emit('addEducation')">
-                <template #icon>
-                  <n-icon :component="Plus" />
-                </template>
-                添加教育
-              </n-button>
+              <div class="section-actions-right">
+                <n-button
+                  secondary
+                  :type="educationReorderMode ? 'primary' : 'default'"
+                  :disabled="!educationReorderMode && resume.education.length < 2"
+                  @click="toggleEducationReorder"
+                >
+                  <template #icon>
+                    <n-icon :component="ArrowUpDown" />
+                  </template>
+                  {{ educationReorderMode ? '完成' : '调整顺序' }}
+                </n-button>
+                <n-button
+                  v-if="!educationReorderMode"
+                  type="primary"
+                  secondary
+                  @click="emit('addEducation')"
+                >
+                  <template #icon>
+                    <n-icon :component="Plus" />
+                  </template>
+                  添加教育
+                </n-button>
+              </div>
             </div>
 
-            <div class="item-list">
+            <draggable
+              v-if="educationReorderMode"
+              v-model="draggableEducation"
+              class="item-reorder-list"
+              item-key="id"
+              handle=".item-drag-handle"
+              :animation="240"
+              easing="cubic-bezier(0.2, 0.8, 0.2, 1)"
+              ghost-class="item-reorder-ghost"
+              chosen-class="item-reorder-chosen"
+              drag-class="item-reorder-drag"
+            >
+              <template #item="{ element, index }">
+                <div class="item-reorder-card">
+                  <n-icon class="item-drag-handle" :component="GripVertical" title="拖拽排序" />
+                  <span class="item-reorder-label">{{ getEducationLabel(element, index) }}</span>
+                </div>
+              </template>
+            </draggable>
+
+            <div v-else class="item-list">
               <n-card
                 v-for="(education, index) in resume.education"
                 :key="education.id"
@@ -440,7 +549,12 @@ function cropAvatar(image: HTMLImageElement) {
         <n-scrollbar class="editor-scrollbar">
           <div class="editor-tab-content">
             <div class="section-actions">
-              <div class="section-collapse-actions" role="group" aria-label="折叠控制">
+              <div
+                v-if="!workReorderMode"
+                class="section-collapse-actions"
+                role="group"
+                aria-label="折叠控制"
+              >
                 <button
                   type="button"
                   class="section-collapse-btn"
@@ -460,15 +574,53 @@ function cropAvatar(image: HTMLImageElement) {
                   <n-icon :component="ChevronsUpDown" />
                 </button>
               </div>
-              <n-button type="primary" secondary @click="emit('addWorkExperience')">
-                <template #icon>
-                  <n-icon :component="Plus" />
-                </template>
-                添加工作
-              </n-button>
+              <div class="section-actions-right">
+                <n-button
+                  secondary
+                  :type="workReorderMode ? 'primary' : 'default'"
+                  :disabled="!workReorderMode && resume.workExperience.length < 2"
+                  @click="toggleWorkReorder"
+                >
+                  <template #icon>
+                    <n-icon :component="ArrowUpDown" />
+                  </template>
+                  {{ workReorderMode ? '完成' : '调整顺序' }}
+                </n-button>
+                <n-button
+                  v-if="!workReorderMode"
+                  type="primary"
+                  secondary
+                  @click="emit('addWorkExperience')"
+                >
+                  <template #icon>
+                    <n-icon :component="Plus" />
+                  </template>
+                  添加工作
+                </n-button>
+              </div>
             </div>
 
-            <div class="item-list">
+            <draggable
+              v-if="workReorderMode"
+              v-model="draggableWorkExperience"
+              class="item-reorder-list"
+              item-key="id"
+              handle=".item-drag-handle"
+              :animation="240"
+              easing="cubic-bezier(0.2, 0.8, 0.2, 1)"
+              ghost-class="item-reorder-ghost"
+              chosen-class="item-reorder-chosen"
+              drag-class="item-reorder-drag"
+            >
+              <template #item="{ element, index }">
+                <div class="item-reorder-card">
+                  <n-icon class="item-drag-handle" :component="GripVertical" title="拖拽排序" />
+                  <span class="item-reorder-label">{{ getWorkLabel(element, index) }}</span>
+                </div>
+              </template>
+            </draggable>
+
+            <div v-else class="item-list">
               <n-card
                 v-for="(work, index) in resume.workExperience"
                 :key="work.id"
@@ -564,7 +716,12 @@ function cropAvatar(image: HTMLImageElement) {
         <n-scrollbar class="editor-scrollbar">
           <div class="editor-tab-content">
             <div class="section-actions">
-              <div class="section-collapse-actions" role="group" aria-label="折叠控制">
+              <div
+                v-if="!projectsReorderMode"
+                class="section-collapse-actions"
+                role="group"
+                aria-label="折叠控制"
+              >
                 <button
                   type="button"
                   class="section-collapse-btn"
@@ -584,15 +741,53 @@ function cropAvatar(image: HTMLImageElement) {
                   <n-icon :component="ChevronsUpDown" />
                 </button>
               </div>
-              <n-button type="primary" secondary @click="emit('addProject')">
-                <template #icon>
-                  <n-icon :component="Plus" />
-                </template>
-                添加项目
-              </n-button>
+              <div class="section-actions-right">
+                <n-button
+                  secondary
+                  :type="projectsReorderMode ? 'primary' : 'default'"
+                  :disabled="!projectsReorderMode && resume.projects.length < 2"
+                  @click="toggleProjectsReorder"
+                >
+                  <template #icon>
+                    <n-icon :component="ArrowUpDown" />
+                  </template>
+                  {{ projectsReorderMode ? '完成' : '调整顺序' }}
+                </n-button>
+                <n-button
+                  v-if="!projectsReorderMode"
+                  type="primary"
+                  secondary
+                  @click="emit('addProject')"
+                >
+                  <template #icon>
+                    <n-icon :component="Plus" />
+                  </template>
+                  添加项目
+                </n-button>
+              </div>
             </div>
 
-            <div class="item-list">
+            <draggable
+              v-if="projectsReorderMode"
+              v-model="draggableProjects"
+              class="item-reorder-list"
+              item-key="id"
+              handle=".item-drag-handle"
+              :animation="240"
+              easing="cubic-bezier(0.2, 0.8, 0.2, 1)"
+              ghost-class="item-reorder-ghost"
+              chosen-class="item-reorder-chosen"
+              drag-class="item-reorder-drag"
+            >
+              <template #item="{ element, index }">
+                <div class="item-reorder-card">
+                  <n-icon class="item-drag-handle" :component="GripVertical" title="拖拽排序" />
+                  <span class="item-reorder-label">{{ getProjectLabel(element, index) }}</span>
+                </div>
+              </template>
+            </draggable>
+
+            <div v-else class="item-list">
               <n-card
                 v-for="(project, index) in resume.projects"
                 :key="project.id"
@@ -1051,6 +1246,67 @@ function cropAvatar(image: HTMLImageElement) {
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 14px;
+}
+
+.section-actions-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.item-reorder-list {
+  display: grid;
+  gap: 8px;
+}
+
+.item-reorder-card {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 12px;
+  border: 1px solid #d5e3dd;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #17302c;
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.item-drag-handle {
+  color: #a8b6b1;
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.item-reorder-label {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-reorder-ghost {
+  opacity: 0.45;
+}
+
+.item-reorder-chosen {
+  border-color: #9fc3b7;
+  background: #f0f7f4;
+}
+
+.item-reorder-drag {
+  opacity: 0.92;
+  box-shadow: 0 8px 20px rgb(34 55 47 / 12%);
 }
 
 .section-collapse-actions {
