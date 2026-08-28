@@ -147,8 +147,8 @@ function formatDate(value: string) {
       v-model:show="showCreateModal"
       preset="card"
       title="新建简历"
-      class="resume-create-modal"
       :bordered="false"
+      :style="{ width: 'min(420px, calc(100vw - 32px))' }"
     >
       <n-form label-placement="top" @submit.prevent="createResume">
         <n-form-item label="简历名称">
@@ -333,10 +333,6 @@ function formatDate(value: string) {
     color: #677a73;
     font-size: 12px;
   }
-}
-
-.resume-create-modal {
-  width: min(420px, calc(100vw - 32px));
 }
 
 .resume-create-actions {

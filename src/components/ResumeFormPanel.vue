@@ -107,6 +107,18 @@ function chooseAvatar() {
   avatarInputRef.value?.click();
 }
 
+function updateSkillItems(items: unknown[]) {
+  props.resume.skillItems.splice(
+    0,
+    props.resume.skillItems.length,
+    ...items.map((item) => (typeof item === 'string' ? item : '')),
+  );
+}
+
+function updateSkillItem(index: number, value: string) {
+  props.resume.skillItems[index] = value;
+}
+
 async function handleAvatarChange(event: Event) {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
@@ -698,9 +710,11 @@ function cropAvatar(image: HTMLImageElement) {
             <n-form v-if="resume.skillMode === 'list'" label-placement="top">
               <n-form-item label="技术能力">
                 <n-dynamic-input
-                  v-model:value="resume.skillItems"
+                  :value="resume.skillItems"
                   class="education-details-input"
                   placeholder="请输入技术能力"
+                  :on-create="() => ''"
+                  @update:value="updateSkillItems"
                 >
                   <template #default="{ value, index }">
                     <n-input
@@ -709,7 +723,7 @@ function cropAvatar(image: HTMLImageElement) {
                       placeholder="请输入技术能力"
                       :autosize="{ minRows: 2, maxRows: 8 }"
                       style="width: 100%"
-                      @update:value="(v) => (resume.skillItems[index] = v)"
+                      @update:value="(v) => updateSkillItem(index, v)"
                     />
                   </template>
                 </n-dynamic-input>

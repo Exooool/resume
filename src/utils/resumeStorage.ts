@@ -192,7 +192,8 @@ function normalizeSkillItems(
   fallback: string[],
 ): string[] {
   if (Array.isArray(source.skillItems)) {
-    return source.skillItems.map((item) => (typeof item === 'string' ? item : ''));
+    const items = source.skillItems.map((item) => (typeof item === 'string' ? item : ''));
+    return items.length ? items : [''];
   }
 
   if (Array.isArray(source.skillGroups)) {
@@ -211,7 +212,7 @@ function normalizeSkillItems(
     }
   }
 
-  return fallback;
+  return fallback.length ? fallback : [''];
 }
 
 function normalizeProjectItem(value: unknown): ProjectItem {
