@@ -3,6 +3,7 @@ import jsPDF from 'jspdf';
 import {
   computed,
   nextTick,
+  onBeforeUnmount,
   onBeforeUpdate,
   onMounted,
   reactive,
@@ -27,12 +28,21 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
   const pageRefs = ref<HTMLElement[]>([]);
   const exportingType = ref<'pdf' | 'png' | 'jpg' | ''>('');
   const spaceScale = ref(1);
+  const history = ref<ResumeData[]>([]);
+  const future = ref<ResumeData[]>([]);
+  const canUndo = computed(() => history.value.length > 0);
+  const canRedo = computed(() => future.value.length > 0);
+  let lastHistorySnapshot = cloneResumeData(resume);
+  let isApplyingHistory = false;
+  let historyTimer = 0;
   let paginationTimer = 0;
 
   const previewBlocks = computed(() => createPreviewBlocks(resume));
   const pageCountLabel = computed(() => `${pages.value.length || 1} 页`);
   const spaceStyle = computed(() => ({
     '--resume-space-scale': String(spaceScale.value),
+    '--resume-accent': resume.theme.accentColor,
+    '--resume-font-family': resume.theme.fontFamily,
   }));
 
   onBeforeUpdate(() => {
@@ -42,6 +52,24 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
   onMounted(() => {
     schedulePagination();
   });
+
+  onBeforeUnmount(() => {
+    window.clearTimeout(historyTimer);
+    window.clearTimeout(paginationTimer);
+  });
+
+  watch(
+    resume,
+    () => {
+      if (isApplyingHistory) {
+        return;
+      }
+
+      window.clearTimeout(historyTimer);
+      historyTimer = window.setTimeout(commitHistorySnapshot, 350);
+    },
+    { deep: true },
+  );
 
   watch(
     previewBlocks,
@@ -65,6 +93,13 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
     },
   );
 
+  watch(
+    () => resume.theme.fontFamily,
+    () => {
+      schedulePagination();
+    },
+  );
+
   function addEducation() {
     resume.education.push({
       id: makeId('edu'),
@@ -81,6 +116,21 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
     resume.education.splice(index, 1);
   }
 
+  function addWorkExperience() {
+    resume.workExperience.push({
+      id: makeId('work'),
+      company: '',
+      title: '',
+      city: '',
+      period: null,
+      highlights: [''],
+    });
+  }
+
+  function removeWorkExperience(index: number) {
+    resume.workExperience.splice(index, 1);
+  }
+
   function addProject() {
     resume.projects.push({
       id: makeId('project'),
@@ -88,6 +138,7 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
       role: '',
       period: null,
       stack: '',
+      description: '',
       highlights: [''],
     });
   }
@@ -96,16 +147,50 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
     resume.projects.splice(index, 1);
   }
 
-  function addSkillGroup() {
-    resume.skillGroups.push({
-      id: makeId('skill'),
-      label: '',
-      skills: [],
-    });
+  function commitHistorySnapshot() {
+    const nextSnapshot = cloneResumeData(resume);
+    if (JSON.stringify(nextSnapshot) === JSON.stringify(lastHistorySnapshot)) {
+      return;
+    }
+
+    history.value.push(lastHistorySnapshot);
+    if (history.value.length > 60) {
+      history.value.shift();
+    }
+    lastHistorySnapshot = nextSnapshot;
+    future.value = [];
   }
 
-  function removeSkillGroup(index: number) {
-    resume.skillGroups.splice(index, 1);
+  function undo() {
+    window.clearTimeout(historyTimer);
+    commitHistorySnapshot();
+    const previous = history.value.pop();
+    if (!previous) {
+      return;
+    }
+
+    future.value.push(cloneResumeData(resume));
+    applyHistorySnapshot(previous);
+  }
+
+  function redo() {
+    window.clearTimeout(historyTimer);
+    const next = future.value.pop();
+    if (!next) {
+      return;
+    }
+
+    history.value.push(cloneResumeData(resume));
+    applyHistorySnapshot(next);
+  }
+
+  function applyHistorySnapshot(snapshot: ResumeData) {
+    isApplyingHistory = true;
+    Object.assign(resume, cloneResumeData(snapshot));
+    lastHistorySnapshot = cloneResumeData(snapshot);
+    void nextTick(() => {
+      isApplyingHistory = false;
+    });
   }
 
   function setMeasureRef(element: unknown) {
@@ -197,7 +282,7 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
         return;
       }
 
-      if (block.kind === 'education' || block.kind === 'project') {
+      if (block.kind === 'education' || block.kind === 'project' || block.kind === 'workExperience') {
         paginateEntryBlock(block, node);
         return;
       }
@@ -219,7 +304,7 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
     pages.value = nextPageSet.length ? nextPageSet : [[]];
 
     function paginateEntryBlock(
-      block: Extract<ResumeBlock, { kind: 'education' | 'project' }>,
+      block: Extract<ResumeBlock, { kind: 'education' | 'project' | 'workExperience' }>,
       node: HTMLElement,
     ) {
       const parts = measureEntryParts(node);
@@ -230,11 +315,12 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
 
       let showTopline = false;
       let showMeta = false;
+      let showDescription = false;
       let itemIndexes: number[] = [];
       let sliceHeight = 0;
 
       const flushSlice = () => {
-        if (!showTopline && !showMeta && itemIndexes.length === 0) {
+        if (!showTopline && !showMeta && !showDescription && itemIndexes.length === 0) {
           return;
         }
 
@@ -248,23 +334,34 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
                 showMeta,
                 detailIndexes: [...itemIndexes],
               } satisfies ResumeBlock)
-            : ({
-                ...block,
-                id: `${block.id}__${sliceSeq}`,
-                showTopline,
-                showMeta,
-                highlightIndexes: [...itemIndexes],
-              } satisfies ResumeBlock);
+            : block.kind === 'project'
+              ? ({
+                  ...block,
+                  id: `${block.id}__${sliceSeq}`,
+                  showTopline,
+                  showMeta,
+                  showDescription,
+                  highlightIndexes: [...itemIndexes],
+                } satisfies ResumeBlock)
+              : ({
+                  ...block,
+                  id: `${block.id}__${sliceSeq}`,
+                  showTopline,
+                  showMeta,
+                  highlightIndexes: [...itemIndexes],
+                } satisfies ResumeBlock);
 
         appendBlock(slicedBlock, sliceHeight);
         showTopline = false;
         showMeta = false;
+        showDescription = false;
         itemIndexes = [];
         sliceHeight = 0;
       };
 
       parts.forEach((part) => {
-        const hasSliceContent = showTopline || showMeta || itemIndexes.length > 0;
+        const hasSliceContent =
+          showTopline || showMeta || showDescription || itemIndexes.length > 0;
         if (
           hasSliceContent &&
           usedHeight + sliceHeight + part.height > PREVIEW_CONTENT_HEIGHT
@@ -279,6 +376,8 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
           showTopline = true;
         } else if (part.type === 'meta') {
           showMeta = true;
+        } else if (part.type === 'description') {
+          showDescription = true;
         } else {
           itemIndexes.push(part.index);
         }
@@ -299,11 +398,11 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
         return;
       }
 
-      let groupIndexes: number[] = [];
+      let itemIndexes: number[] = [];
       let sliceHeight = 0;
 
       const flushSlice = () => {
-        if (!groupIndexes.length) {
+        if (!itemIndexes.length) {
           return;
         }
 
@@ -312,17 +411,17 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
           {
             ...block,
             id: `${block.id}__${sliceSeq}`,
-            groupIndexes: [...groupIndexes],
+            itemIndexes: [...itemIndexes],
           },
           sliceHeight,
         );
-        groupIndexes = [];
+        itemIndexes = [];
         sliceHeight = 0;
       };
 
       parts.forEach((part) => {
         if (
-          groupIndexes.length > 0 &&
+          itemIndexes.length > 0 &&
           usedHeight + sliceHeight + part.height > PREVIEW_CONTENT_HEIGHT
         ) {
           flushSlice();
@@ -331,7 +430,7 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
           }
         }
 
-        groupIndexes.push(part.index);
+        itemIndexes.push(part.index);
         sliceHeight += part.height;
       });
 
@@ -395,6 +494,7 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
     const parts: Array<
       | { type: 'topline'; height: number }
       | { type: 'meta'; height: number }
+      | { type: 'description'; height: number }
       | { type: 'item'; index: number; height: number }
     > = [];
 
@@ -406,6 +506,11 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
     const meta = node.querySelector('.entry-meta');
     if (meta instanceof HTMLElement) {
       parts.push({ type: 'meta', height: getOuterHeight(meta) });
+    }
+
+    const description = node.querySelector('.entry-description');
+    if (description instanceof HTMLElement) {
+      parts.push({ type: 'description', height: getOuterHeight(description) });
     }
 
     Array.from(node.querySelectorAll('.resume-list > li')).forEach((item, index) => {
@@ -439,12 +544,12 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
     const style = window.getComputedStyle(node);
     const marginTop = parseFloat(style.marginTop || '0');
     const marginBottom = parseFloat(style.marginBottom || '0');
-    const parts = Array.from(node.querySelectorAll('.skill-row')).flatMap((row, index) => {
-      if (!(row instanceof HTMLElement)) {
+    const parts = Array.from(node.querySelectorAll('.resume-list > li')).flatMap((item, index) => {
+      if (!(item instanceof HTMLElement)) {
         return [];
       }
 
-      return [{ index, height: getOuterHeight(row) }];
+      return [{ index, height: getOuterHeight(item) }];
     });
 
     if (!parts.length) {
@@ -453,6 +558,15 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
 
     parts[0].height += marginTop;
     parts[parts.length - 1].height += marginBottom;
+
+    const list = node.querySelector('.resume-list');
+    if (list instanceof HTMLElement) {
+      const listStyle = window.getComputedStyle(list);
+      const listExtra =
+        parseFloat(listStyle.marginTop || '0') + parseFloat(listStyle.paddingTop || '0');
+      parts[0].height += listExtra;
+    }
+
     return parts;
   }
 
@@ -490,7 +604,7 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
       return getOuterHeight(node);
     }
 
-    if (block.kind === 'education' || block.kind === 'project') {
+    if (block.kind === 'education' || block.kind === 'project' || block.kind === 'workExperience') {
       const parts = measureEntryParts(node);
       return parts[0]?.height || getOuterHeight(node);
     }
@@ -660,12 +774,16 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
     pageCountLabel,
     exportingType,
     spaceStyle,
+    canUndo,
+    canRedo,
+    undo,
+    redo,
     addEducation,
     removeEducation,
+    addWorkExperience,
+    removeWorkExperience,
     addProject,
     removeProject,
-    addSkillGroup,
-    removeSkillGroup,
     setMeasureRef,
     collectPageRef,
     exportPDF,

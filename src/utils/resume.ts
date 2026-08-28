@@ -4,7 +4,10 @@ import type {
   ProjectItem,
   ResumeBlock,
   ResumeData,
+  ResumeSectionId,
+  WorkExperienceItem,
 } from '../types';
+import { RESUME_SECTION_IDS } from '../types';
 
 export const A4_WIDTH_MM = 210;
 export const A4_HEIGHT_MM = 297;
@@ -21,40 +24,81 @@ export function cloneResumeData(resume: ResumeData): ResumeData {
 }
 
 export function createPreviewBlocks(resume: ResumeData) {
-  const blocks: ResumeBlock[] = [{ id: 'header', kind: 'header', basic: resume.basic }];
+  const blocks: ResumeBlock[] = [];
+  const hiddenSections = new Set(resume.hiddenSections ?? []);
+  const sectionOrder = normalizeSectionOrder(resume.sectionOrder);
 
-  const educationItems = resume.education.filter(hasEducationContent);
-  if (educationItems.length) {
-    blocks.push({ id: 'section-education', kind: 'section', title: '教育经历' });
-    educationItems.forEach((item) => {
-      blocks.push({ id: item.id, kind: 'education', item });
-    });
+  sectionOrder.forEach((sectionId) => {
+    if (hiddenSections.has(sectionId)) {
+      return;
+    }
+
+    appendSectionBlocks(blocks, sectionId, resume);
+  });
+
+  return blocks;
+}
+
+function normalizeSectionOrder(sectionOrder: ResumeSectionId[] | undefined): ResumeSectionId[] {
+  const order = [...new Set(sectionOrder ?? RESUME_SECTION_IDS)];
+  return ['basic', ...order.filter((sectionId): sectionId is ResumeSectionId => sectionId !== 'basic')];
+}
+
+function appendSectionBlocks(
+  blocks: ResumeBlock[],
+  sectionId: ResumeSectionId,
+  resume: ResumeData,
+) {
+  if (sectionId === 'basic') {
+    blocks.push({ id: 'header', kind: 'header', basic: resume.basic });
+    return;
   }
 
-  const projectItems = resume.projects.filter(hasProjectContent);
-  if (projectItems.length) {
-    blocks.push({ id: 'section-projects', kind: 'section', title: '项目经历' });
-    projectItems.forEach((item) => {
-      blocks.push({ id: item.id, kind: 'project', item });
-    });
+  if (sectionId === 'education') {
+    const educationItems = resume.education.filter(hasEducationContent);
+    if (educationItems.length) {
+      blocks.push({ id: 'section-education', kind: 'section', title: '教育经历' });
+      educationItems.forEach((item) => blocks.push({ id: item.id, kind: 'education', item }));
+    }
+    return;
   }
 
-  if (resume.skillMode === 'custom') {
-    const skillTextBlocks = splitTextBlocks(resume.skillText);
-    if (skillTextBlocks.length) {
-      blocks.push({ id: 'section-skills', kind: 'section', title: '技术能力' });
-      skillTextBlocks.forEach((text, index) => {
-        blocks.push({ id: `skills-text-${index}`, kind: 'skillsText', text });
-      });
+  if (sectionId === 'workExperience') {
+    const workItems = resume.workExperience.filter(hasWorkExperienceContent);
+    if (workItems.length) {
+      blocks.push({ id: 'section-workExperience', kind: 'section', title: '工作经历' });
+      workItems.forEach((item) => blocks.push({ id: item.id, kind: 'workExperience', item }));
     }
-  } else {
-    const skillGroups = resume.skillGroups.filter(
-      (group) => group.label.trim() || group.skills.some(Boolean),
-    );
-    if (skillGroups.length) {
-      blocks.push({ id: 'section-skills', kind: 'section', title: '技术能力' });
-      blocks.push({ id: 'skills', kind: 'skills', groups: skillGroups });
+    return;
+  }
+
+  if (sectionId === 'projects') {
+    const projectItems = resume.projects.filter(hasProjectContent);
+    if (projectItems.length) {
+      blocks.push({ id: 'section-projects', kind: 'section', title: '项目经历' });
+      projectItems.forEach((item) => blocks.push({ id: item.id, kind: 'project', item }));
     }
+    return;
+  }
+
+  if (sectionId === 'skills') {
+    if (resume.skillMode === 'custom') {
+      const skillTextBlocks = splitTextBlocks(resume.skillText);
+      if (skillTextBlocks.length) {
+        blocks.push({ id: 'section-skills', kind: 'section', title: '技术能力' });
+        skillTextBlocks.forEach((text, index) => {
+          blocks.push({ id: `skills-text-${index}`, kind: 'skillsText', text });
+        });
+      }
+      return;
+    }
+
+    const skillItems = resume.skillItems.filter((item) => item.trim());
+    if (skillItems.length) {
+      blocks.push({ id: 'section-skills', kind: 'section', title: '技术能力' });
+      blocks.push({ id: 'skills', kind: 'skills', items: skillItems });
+    }
+    return;
   }
 
   const summaryBlocks = splitTextBlocks(resume.summary);
@@ -64,8 +108,6 @@ export function createPreviewBlocks(resume: ResumeData) {
       blocks.push({ id: `summary-${index}`, kind: 'summary', text });
     });
   }
-
-  return blocks;
 }
 
 function hasEducationContent(item: EducationItem) {
@@ -78,11 +120,21 @@ function hasEducationContent(item: EducationItem) {
   ].some((value) => value.trim());
 }
 
+function hasWorkExperienceContent(item: WorkExperienceItem) {
+  return hasPeriodContent(item.period) || [
+    item.company,
+    item.title,
+    item.city,
+    ...item.highlights,
+  ].some((value) => value.trim());
+}
+
 function hasProjectContent(item: ProjectItem) {
   return hasPeriodContent(item.period) || [
     item.name,
     item.role,
     item.stack,
+    item.description,
     ...item.highlights,
   ].some((value) => value.trim());
 }

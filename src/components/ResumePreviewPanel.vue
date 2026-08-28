@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { Download, FileImage, FileText } from '@lucide/vue';
-import { NButton, NDivider, NIcon, NScrollbar, NSpace } from 'naive-ui';
+import { NScrollbar } from 'naive-ui';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import type { ResumeBlock, ResumeTemplateId } from '../types';
 import { A4_PAGE_HEIGHT } from '../utils/resume';
@@ -16,15 +15,8 @@ const props = defineProps<{
   templateId: ResumeTemplateId;
   exportingType: 'pdf' | 'png' | 'jpg' | '';
   spaceStyle?: Record<string, string>;
-  compact?: boolean;
   collectPageRef: (element: unknown) => void;
   setMeasureRef: (element: unknown) => void;
-}>();
-
-const emit = defineEmits<{
-  'export-pdf': [];
-  'export-png': [];
-  'export-jpg': [];
 }>();
 
 const stageRef = ref<HTMLElement | null>(null);
@@ -92,53 +84,12 @@ function updateScale(width: number) {
 
 <template>
   <section class="preview-panel">
-    <header class="preview-toolbar">
+    <header class="preview-toolbar panel-header-bar">
       <div>
         <p class="eyebrow">Preview</p>
         <h2>简历预览</h2>
       </div>
-
-      <n-space class="preview-export-actions" :wrap="compact" :size="8">
-        <n-button
-          secondary
-          size="small"
-          :loading="exportingType === 'pdf'"
-          :disabled="Boolean(exportingType)"
-          @click="emit('export-pdf')"
-        >
-          <template #icon>
-            <n-icon :component="FileText" />
-          </template>
-          PDF
-        </n-button>
-        <n-button
-          secondary
-          size="small"
-          :loading="exportingType === 'png'"
-          :disabled="Boolean(exportingType)"
-          @click="emit('export-png')"
-        >
-          <template #icon>
-            <n-icon :component="Download" />
-          </template>
-          PNG
-        </n-button>
-        <n-button
-          secondary
-          size="small"
-          :loading="exportingType === 'jpg'"
-          :disabled="Boolean(exportingType)"
-          @click="emit('export-jpg')"
-        >
-          <template #icon>
-            <n-icon :component="FileImage" />
-          </template>
-          JPG
-        </n-button>
-      </n-space>
     </header>
-
-    <n-divider />
 
     <n-scrollbar class="preview-scrollbar">
       <div ref="stageRef" class="preview-stage">
@@ -179,7 +130,7 @@ function updateScale(width: number) {
   </section>
 </template>
 
-<style lang="scss">
+<style scoped lang="scss">
 .preview-panel {
   display: flex;
   min-width: 0;
@@ -188,26 +139,21 @@ function updateScale(width: number) {
   max-height: none;
   flex-direction: column;
   background: #e7ebed;
-
-  .n-divider {
-    margin: 0;
-  }
 }
 
 .preview-toolbar {
   display: flex;
-  flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 22px 24px 16px;
+  padding: 0 24px;
 
   h2 {
     margin: 0;
     overflow: hidden;
     color: #17252c;
-    font-size: 22px;
-    line-height: 1.2;
+    font-size: 17px;
+    line-height: 1.3;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -276,15 +222,6 @@ function updateScale(width: number) {
     box-sizing: border-box;
   }
 
-  .preview-export-actions {
-    width: 100%;
-
-    .n-button {
-      flex: 1;
-      min-width: 0;
-    }
-  }
-
   .page-count {
     margin: 0 0 8px;
   }
@@ -303,11 +240,7 @@ function updateScale(width: number) {
 
 @media (max-width: 620px) {
   .preview-toolbar {
-    padding: 16px 16px 12px;
-
-    h2 {
-      font-size: 20px;
-    }
+    padding: 0 16px;
   }
 }
 </style>

@@ -14,7 +14,8 @@
     "jspdf": "^4.2.1",
     "naive-ui": "^2.40.0",
     "vue": "^3.5.0",
-    "vue-router": "^4.6.4"
+    "vue-router": "^4.6.4",
+    "vuedraggable": "^4.1.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.8",

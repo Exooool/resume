@@ -171,7 +171,7 @@ function formatDate(value: string) {
   </main>
 </template>
 
-<style lang="scss">
+<style scoped lang="scss">
 .resume-list-page {
   display: flex;
   flex-direction: column;

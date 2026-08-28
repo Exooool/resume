@@ -64,7 +64,7 @@ onBeforeUnmount(() => {
   </div>
 </template>
 
-<style lang="scss">
+<style scoped lang="scss">
 .resume-list-card-preview {
   position: relative;
   aspect-ratio: 210 / 297;

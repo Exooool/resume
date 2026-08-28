@@ -1,15 +1,11 @@
 <script setup lang="ts">
 import {
-  ArrowLeft,
   ChevronDown,
   ChevronRight,
   ChevronsDownUp,
   ChevronsUpDown,
-  FlaskConical,
   ImagePlus,
-  LayoutGrid,
   Plus,
-  Settings2,
   Trash2,
   UserRound,
 } from '@lucide/vue';
@@ -18,45 +14,39 @@ import {
   NCard,
   NDatePicker,
   NDynamicInput,
-  NDynamicTags,
   NForm,
   NFormItem,
   NIcon,
   NInput,
-  NPopover,
+  NPopconfirm,
   NRadioButton,
   NRadioGroup,
   NScrollbar,
-  NSwitch,
   NTabPane,
   NTabs,
 } from 'naive-ui';
-import { ref } from 'vue';
-import type { ResumeData } from '../types';
+import { computed, ref } from 'vue';
+import type { ResumeData, ResumeSectionId } from '../types';
 
 const props = defineProps<{
   resume: ResumeData;
-  resumeName: string;
-  compact?: boolean;
-  showDemoFill?: boolean;
+  activeSection: ResumeSectionId;
 }>();
 
 const emit = defineEmits<{
-  backToList: [];
-  openTemplateChooser: [];
-  fillDemo: [];
+  'update:active-section': [sectionId: ResumeSectionId];
   addEducation: [];
   removeEducation: [index: number];
+  addWorkExperience: [];
+  removeWorkExperience: [index: number];
   addProject: [];
   removeProject: [index: number];
-  addSkillGroup: [];
-  removeSkillGroup: [index: number];
 }>();
 
 const skillModeOptions = [
   {
-    label: '分类编辑',
-    value: 'groups',
+    label: '列表编辑',
+    value: 'list',
   },
   {
     label: '自定义文本',
@@ -67,6 +57,17 @@ const skillModeOptions = [
 const collapsedIds = ref<Record<string, boolean>>({});
 const avatarInputRef = ref<HTMLInputElement | null>(null);
 const avatarUploadError = ref('');
+
+const sectionLabels: Record<ResumeSectionId, string> = {
+  basic: '基本信息',
+  education: '教育经历',
+  workExperience: '工作经历',
+  projects: '项目经历',
+  skills: '技术能力',
+  summary: '自我总结',
+};
+
+const activeSectionTitle = computed(() => sectionLabels[props.activeSection]);
 
 const MAX_AVATAR_FILE_SIZE = 10 * 1024 * 1024;
 const AVATAR_WIDTH = 400;
@@ -139,6 +140,12 @@ function removeAvatar() {
   avatarUploadError.value = '';
 }
 
+function handleTabUpdate(value: string) {
+  if (value in sectionLabels) {
+    emit('update:active-section', value as ResumeSectionId);
+  }
+}
+
 function loadImage(file: File) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
     const objectUrl = URL.createObjectURL(file);
@@ -201,103 +208,65 @@ function cropAvatar(image: HTMLImageElement) {
 
 <template>
   <aside class="editor-panel">
-    <header class="panel-header">
-      <div class="panel-header-title">
-        <p class="eyebrow">Resume Editor</p>
-        <h1>{{ resumeName }}</h1>
-      </div>
-      <div class="panel-header-actions">
-        <n-button secondary size="small" @click="emit('backToList')">
-          <template #icon>
-            <n-icon :component="ArrowLeft" />
-          </template>
-          <span class="panel-action-label">简历列表</span>
-        </n-button>
-        <n-button secondary size="small" @click="emit('openTemplateChooser')">
-          <template #icon>
-            <n-icon :component="LayoutGrid" />
-          </template>
-          <span class="panel-action-label">{{ compact ? '模板' : '模板选择' }}</span>
-        </n-button>
-        <n-button
-          v-if="showDemoFill"
-          secondary
-          type="warning"
-          size="small"
-          @click="emit('fillDemo')"
-        >
-          <template #icon>
-            <n-icon :component="FlaskConical" />
-          </template>
-          <span class="panel-action-label">{{ compact ? '示例' : '模拟数据' }}</span>
-        </n-button>
-        <div class="panel-header-action-item">
-          <n-popover trigger="click" placement="bottom-start">
-            <template #trigger>
-              <n-button secondary size="small">
-                <template #icon>
-                  <n-icon :component="Settings2" />
-                </template>
-                <span class="panel-action-label">{{ compact ? '更多' : '更多配置' }}</span>
-              </n-button>
-            </template>
-            <div class="more-config-panel">
-              <label class="smart-one-page-control">
-                <span>智能一页</span>
-                <n-switch v-model:value="resume.smartOnePage" size="small" />
-              </label>
-            </div>
-          </n-popover>
-        </div>
-      </div>
+    <header class="form-panel-header panel-header-bar">
+      <p class="eyebrow">正在编辑</p>
+      <h2>{{ activeSectionTitle }}</h2>
     </header>
 
-    <n-tabs type="line" class="editor-tabs">
+    <n-tabs
+      type="line"
+      class="editor-tabs"
+      :value="activeSection"
+      @update:value="handleTabUpdate"
+    >
       <n-tab-pane name="basic" tab="基本信息" display-directive="show">
         <n-scrollbar class="editor-scrollbar">
           <div class="editor-tab-content">
             <n-form label-placement="top" class="form-stack">
               <n-form-item label="个人头像" class="avatar-form-item">
                 <div class="avatar-editor">
-                  <div class="avatar-editor-preview">
+                  <div
+                    class="avatar-editor-preview"
+                    :class="{ 'has-avatar': resume.basic.avatar }"
+                    role="button"
+                    tabindex="0"
+                    :title="resume.basic.avatar ? '点击更换头像' : '点击上传头像'"
+                    @click="chooseAvatar"
+                    @keydown.enter="chooseAvatar"
+                  >
                     <img
                       v-if="resume.basic.avatar"
                       :src="resume.basic.avatar"
                       alt="个人头像预览"
                     />
                     <n-icon v-else :component="UserRound" />
-                  </div>
-                  <div class="avatar-editor-controls">
-                    <input
-                      ref="avatarInputRef"
-                      class="avatar-file-input"
-                      type="file"
-                      accept="image/png,image/jpeg,image/webp"
-                      @change="handleAvatarChange"
-                    />
-                    <div class="avatar-editor-actions">
-                      <n-button secondary @click="chooseAvatar">
-                        <template #icon>
-                          <n-icon :component="ImagePlus" />
-                        </template>
-                        {{ resume.basic.avatar ? '更换头像' : '上传头像' }}
-                      </n-button>
-                      <n-button
-                        v-if="resume.basic.avatar"
-                        secondary
-                        type="error"
-                        @click="removeAvatar"
-                      >
-                        <template #icon>
-                          <n-icon :component="Trash2" />
-                        </template>
-                        移除
-                      </n-button>
+                    <div v-if="resume.basic.avatar" class="avatar-replace-overlay">
+                      <n-icon :component="ImagePlus" />
                     </div>
-                    <p v-if="avatarUploadError" class="avatar-upload-error" role="alert">
-                      {{ avatarUploadError }}
-                    </p>
+                    <n-popconfirm v-if="resume.basic.avatar" @positive-click="removeAvatar">
+                      <template #trigger>
+                        <button
+                          type="button"
+                          class="avatar-remove-btn"
+                          title="移除头像"
+                          @click.stop
+                        >
+                          <n-icon :component="Trash2" />
+                        </button>
+                      </template>
+                      确定移除当前头像吗？
+                    </n-popconfirm>
                   </div>
+                  <input
+                    ref="avatarInputRef"
+                    class="avatar-file-input"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    @change="handleAvatarChange"
+                  />
+                  <p v-if="avatarUploadError" class="avatar-upload-error" role="alert">
+                    {{ avatarUploadError }}
+                  </p>
                 </div>
               </n-form-item>
               <div class="form-grid">
@@ -433,8 +402,144 @@ function cropAvatar(image: HTMLImageElement) {
                   <n-form-item label="补充说明">
                     <n-dynamic-input
                       v-model:value="education.details"
+                      class="education-details-input"
                       placeholder="课程、成绩、奖项等"
-                    />
+                    >
+                      <template #default="{ value, index }">
+                        <n-input
+                          type="textarea"
+                          :value="value"
+                          placeholder="课程、成绩、奖项等"
+                          :autosize="{ minRows: 2, maxRows: 8 }"
+                          style="width: 100%"
+                          @update:value="(v) => (education.details[index] = v)"
+                        />
+                      </template>
+                    </n-dynamic-input>
+                  </n-form-item>
+                </n-form>
+              </n-card>
+            </div>
+          </div>
+        </n-scrollbar>
+      </n-tab-pane>
+
+      <n-tab-pane name="workExperience" tab="工作经历" display-directive="show">
+        <n-scrollbar class="editor-scrollbar">
+          <div class="editor-tab-content">
+            <div class="section-actions">
+              <div class="section-collapse-actions" role="group" aria-label="折叠控制">
+                <button
+                  type="button"
+                  class="section-collapse-btn"
+                  title="全部折叠"
+                  aria-label="全部折叠"
+                  @click="collapseAll(resume.workExperience)"
+                >
+                  <n-icon :component="ChevronsDownUp" />
+                </button>
+                <button
+                  type="button"
+                  class="section-collapse-btn"
+                  title="全部展开"
+                  aria-label="全部展开"
+                  @click="expandAll(resume.workExperience)"
+                >
+                  <n-icon :component="ChevronsUpDown" />
+                </button>
+              </div>
+              <n-button type="primary" secondary @click="emit('addWorkExperience')">
+                <template #icon>
+                  <n-icon :component="Plus" />
+                </template>
+                添加工作
+              </n-button>
+            </div>
+
+            <div class="item-list">
+              <n-card
+                v-for="(work, index) in resume.workExperience"
+                :key="work.id"
+                class="item-card"
+                :class="{ 'is-collapsed': isCollapsed(work.id) }"
+                size="small"
+              >
+                <template #header>
+                  <div class="item-card-title">
+                    <span>工作经历 {{ index + 1 }}</span>
+                    <n-button
+                      quaternary
+                      circle
+                      size="small"
+                      :aria-label="isCollapsed(work.id) ? '展开' : '折叠'"
+                      @click="toggleCollapsed(work.id)"
+                    >
+                      <template #icon>
+                        <n-icon
+                          :component="isCollapsed(work.id) ? ChevronRight : ChevronDown"
+                        />
+                      </template>
+                    </n-button>
+                  </div>
+                </template>
+                <template #header-extra>
+                  <n-button
+                    quaternary
+                    circle
+                    type="error"
+                    @click="emit('removeWorkExperience', index)"
+                  >
+                    <template #icon>
+                      <n-icon :component="Trash2" />
+                    </template>
+                  </n-button>
+                </template>
+
+                <n-form
+                  v-if="!isCollapsed(work.id)"
+                  label-placement="top"
+                  class="form-stack"
+                >
+                  <div class="form-grid">
+                    <n-form-item label="公司" class="wide-form-item">
+                      <n-input v-model:value="work.company" placeholder="公司名称" />
+                    </n-form-item>
+                    <n-form-item label="时间" class="date-range-form-item">
+                      <n-date-picker
+                        v-model:formatted-value="work.period"
+                        class="date-range-picker"
+                        type="monthrange"
+                        value-format="yyyy.MM"
+                        format="yyyy.MM"
+                        clearable
+                        start-placeholder="开始月份"
+                        end-placeholder="结束月份"
+                      />
+                    </n-form-item>
+                    <n-form-item label="职位">
+                      <n-input v-model:value="work.title" placeholder="职位名称" />
+                    </n-form-item>
+                    <n-form-item label="城市">
+                      <n-input v-model:value="work.city" placeholder="所在城市" />
+                    </n-form-item>
+                  </div>
+                  <n-form-item label="工作内容">
+                    <n-dynamic-input
+                      v-model:value="work.highlights"
+                      class="education-details-input"
+                      placeholder="职责、业绩、项目等"
+                    >
+                      <template #default="{ value, index: highlightIndex }">
+                        <n-input
+                          type="textarea"
+                          :value="value"
+                          placeholder="职责、业绩、项目等"
+                          :autosize="{ minRows: 2, maxRows: 8 }"
+                          style="width: 100%"
+                          @update:value="(v) => (work.highlights[highlightIndex] = v)"
+                        />
+                      </template>
+                    </n-dynamic-input>
                   </n-form-item>
                 </n-form>
               </n-card>
@@ -537,11 +642,31 @@ function cropAvatar(image: HTMLImageElement) {
                       <n-input v-model:value="project.stack" placeholder="Vue / TypeScript / ..." />
                     </n-form-item>
                   </div>
+                  <n-form-item label="项目描述">
+                    <n-input
+                      v-model:value="project.description"
+                      type="textarea"
+                      placeholder="简要描述项目背景、目标与职责"
+                      :autosize="{ minRows: 2, maxRows: 8 }"
+                    />
+                  </n-form-item>
                   <n-form-item label="项目亮点">
                     <n-dynamic-input
                       v-model:value="project.highlights"
+                      class="education-details-input"
                       placeholder="请输入项目亮点"
-                    />
+                    >
+                      <template #default="{ value, index: highlightIndex }">
+                        <n-input
+                          type="textarea"
+                          :value="value"
+                          placeholder="请输入项目亮点"
+                          :autosize="{ minRows: 2, maxRows: 8 }"
+                          style="width: 100%"
+                          @update:value="(v) => (project.highlights[highlightIndex] = v)"
+                        />
+                      </template>
+                    </n-dynamic-input>
                   </n-form-item>
                 </n-form>
               </n-card>
@@ -570,88 +695,26 @@ function cropAvatar(image: HTMLImageElement) {
               </n-form-item>
             </n-form>
 
-            <div v-if="resume.skillMode === 'groups'" class="section-actions">
-              <div class="section-collapse-actions" role="group" aria-label="折叠控制">
-                <button
-                  type="button"
-                  class="section-collapse-btn"
-                  title="全部折叠"
-                  aria-label="全部折叠"
-                  @click="collapseAll(resume.skillGroups)"
+            <n-form v-if="resume.skillMode === 'list'" label-placement="top">
+              <n-form-item label="技术能力">
+                <n-dynamic-input
+                  v-model:value="resume.skillItems"
+                  class="education-details-input"
+                  placeholder="请输入技术能力"
                 >
-                  <n-icon :component="ChevronsDownUp" />
-                </button>
-                <button
-                  type="button"
-                  class="section-collapse-btn"
-                  title="全部展开"
-                  aria-label="全部展开"
-                  @click="expandAll(resume.skillGroups)"
-                >
-                  <n-icon :component="ChevronsUpDown" />
-                </button>
-              </div>
-              <n-button type="primary" secondary @click="emit('addSkillGroup')">
-                <template #icon>
-                  <n-icon :component="Plus" />
-                </template>
-                添加分类
-              </n-button>
-            </div>
-
-            <div v-if="resume.skillMode === 'groups'" class="item-list">
-              <n-card
-                v-for="(group, index) in resume.skillGroups"
-                :key="group.id"
-                class="item-card"
-                :class="{ 'is-collapsed': isCollapsed(group.id) }"
-                size="small"
-              >
-                <template #header>
-                  <div class="item-card-title">
-                    <span>技能分类 {{ index + 1 }}</span>
-                    <n-button
-                      quaternary
-                      circle
-                      size="small"
-                      :aria-label="isCollapsed(group.id) ? '展开' : '折叠'"
-                      @click="toggleCollapsed(group.id)"
-                    >
-                      <template #icon>
-                        <n-icon
-                          :component="isCollapsed(group.id) ? ChevronRight : ChevronDown"
-                        />
-                      </template>
-                    </n-button>
-                  </div>
-                </template>
-                <template #header-extra>
-                  <n-button
-                    quaternary
-                    circle
-                    type="error"
-                    @click="emit('removeSkillGroup', index)"
-                  >
-                    <template #icon>
-                      <n-icon :component="Trash2" />
-                    </template>
-                  </n-button>
-                </template>
-
-                <n-form
-                  v-if="!isCollapsed(group.id)"
-                  label-placement="top"
-                  class="form-stack"
-                >
-                  <n-form-item label="分类名称">
-                    <n-input v-model:value="group.label" placeholder="前端 / 后端 / 工具" />
-                  </n-form-item>
-                  <n-form-item label="技能项">
-                    <n-dynamic-tags v-model:value="group.skills" />
-                  </n-form-item>
-                </n-form>
-              </n-card>
-            </div>
+                  <template #default="{ value, index }">
+                    <n-input
+                      type="textarea"
+                      :value="value"
+                      placeholder="请输入技术能力"
+                      :autosize="{ minRows: 2, maxRows: 8 }"
+                      style="width: 100%"
+                      @update:value="(v) => (resume.skillItems[index] = v)"
+                    />
+                  </template>
+                </n-dynamic-input>
+              </n-form-item>
+            </n-form>
 
             <n-form v-else label-placement="top">
               <n-form-item label="技术能力">
@@ -687,7 +750,7 @@ function cropAvatar(image: HTMLImageElement) {
   </aside>
 </template>
 
-<style lang="scss">
+<style scoped lang="scss">
 .editor-panel {
   display: flex;
   height: 100%;
@@ -697,6 +760,20 @@ function cropAvatar(image: HTMLImageElement) {
   flex-direction: column;
   border-right: 1px solid #d7dedb;
   background: #fbfcfb;
+}
+
+.form-panel-header {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 24px;
+
+  h2 {
+    margin: 0;
+    color: #17252c;
+    font-size: 17px;
+    line-height: 1.3;
+  }
 }
 
 .panel-header {
@@ -732,13 +809,13 @@ function cropAvatar(image: HTMLImageElement) {
   width: 100%;
   min-width: 0;
 
-  > .n-button,
+  > :deep(.n-button),
   > .panel-header-action-item {
     flex: 1 1 0;
     min-width: 0;
   }
 
-  .n-button {
+  :deep(.n-button) {
     width: 100%;
     justify-content: center;
     white-space: nowrap;
@@ -780,19 +857,18 @@ function cropAvatar(image: HTMLImageElement) {
   min-height: 0;
   overflow: hidden;
 
-  > .n-tabs-nav {
-    flex-shrink: 0;
-    padding: 0 24px;
+  > :deep(.n-tabs-nav) {
+    display: none;
   }
 
-  .n-tabs-pane-wrapper {
+  :deep(.n-tabs-pane-wrapper) {
     flex: 1;
     min-width: 0;
     min-height: 0;
     overflow: hidden;
   }
 
-  .n-tab-pane {
+  :deep(.n-tab-pane) {
     height: 100%;
     padding: 0 !important;
   }
@@ -808,29 +884,68 @@ function cropAvatar(image: HTMLImageElement) {
   gap: 8px;
 }
 
+.education-details-input {
+  width: 100%;
+
+  :deep(.n-dynamic-input-item) {
+    align-items: flex-start;
+  }
+
+  :deep(.n-input) {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+  }
+
+  :deep(.n-input__textarea-el) {
+    font-size: var(--n-font-size);
+    line-height: 1.6;
+    color: var(--n-text-color);
+  }
+}
+
 .avatar-form-item {
   margin-bottom: 4px;
 }
 
 .avatar-editor {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  width: 100%;
+  display: grid;
+  gap: 8px;
+  width: fit-content;
 }
 
 .avatar-editor-preview {
+  position: relative;
   display: flex;
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  width: 72px;
-  height: 90px;
+  width: 108px;
+  height: 135px;
   overflow: hidden;
   border: 1px dashed #b9c9c2;
-  border-radius: 6px;
+  border-radius: 9px;
   background: #f3f7f5;
   color: #82938c;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+
+  &:hover,
+  &:focus-visible {
+    border-color: #9fc3b7;
+    background: #edf5f1;
+    outline: none;
+  }
+
+  &.has-avatar:hover .avatar-replace-overlay,
+  &.has-avatar:focus-visible .avatar-replace-overlay,
+  &.has-avatar:hover .avatar-remove-btn,
+  &.has-avatar:focus-visible .avatar-remove-btn {
+    opacity: 1;
+    pointer-events: auto;
+  }
 
   img {
     width: 100%;
@@ -838,21 +953,59 @@ function cropAvatar(image: HTMLImageElement) {
     object-fit: cover;
   }
 
-  .n-icon {
-    font-size: 28px;
+  :deep(.n-icon) {
+    font-size: 42px;
   }
 }
 
-.avatar-editor-controls {
-  display: grid;
-  min-width: 0;
-  gap: 8px;
+.avatar-replace-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(15 35 28 / 48%);
+  color: #fff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+
+  :deep(.n-icon) {
+    font-size: 33px;
+  }
 }
 
-.avatar-editor-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+.avatar-remove-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 92%);
+  color: #d03050;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 1px 4px rgb(15 35 28 / 16%);
+  transition:
+    opacity 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.2s ease;
+
+  &:hover {
+    background: #fff;
+    transform: scale(1.06);
+  }
+
+  :deep(.n-icon) {
+    font-size: 14px;
+  }
 }
 
 .avatar-file-input {
@@ -922,7 +1075,7 @@ function cropAvatar(image: HTMLImageElement) {
     outline-offset: -2px;
   }
 
-  .n-icon {
+  :deep(.n-icon) {
     font-size: 15px;
   }
 }
@@ -935,7 +1088,7 @@ function cropAvatar(image: HTMLImageElement) {
   display: flex;
   width: 100%;
 
-  .n-radio-button {
+  :deep(.n-radio-button) {
     flex: 1;
     text-align: center;
   }
@@ -944,12 +1097,12 @@ function cropAvatar(image: HTMLImageElement) {
 .date-range-picker {
   width: 100%;
 
-  .n-date-picker-icon,
-  .n-base-clear {
+  :deep(.n-date-picker-icon),
+  :deep(.n-base-clear) {
     flex: 0 0 auto;
   }
 
-  .n-date-picker-input {
+  :deep(.n-date-picker-input) {
     min-width: 0;
   }
 }
@@ -972,11 +1125,11 @@ function cropAvatar(image: HTMLImageElement) {
 }
 
 .item-card.is-collapsed {
-  .n-card-header {
+  :deep(.n-card-header) {
     border-bottom: 0;
   }
 
-  .n-card__content {
+  :deep(.n-card__content) {
     display: none;
     padding: 0;
   }
@@ -996,27 +1149,27 @@ function cropAvatar(image: HTMLImageElement) {
     width: 100%;
     flex-wrap: wrap;
 
-    > .n-button,
+    > :deep(.n-button),
     > .panel-header-action-item {
       flex: 1 1 calc(50% - 4px);
     }
 
-    .n-button {
+    :deep(.n-button) {
       width: 100%;
     }
   }
 
   .editor-tabs {
-    > .n-tabs-nav {
+    > :deep(.n-tabs-nav) {
       padding: 0 16px;
     }
 
-    .n-tabs-nav {
+    :deep(.n-tabs-nav) {
       width: 100%;
       max-width: 100%;
     }
 
-    .n-tabs-nav-scroll-wrapper {
+    :deep(.n-tabs-nav-scroll-wrapper) {
       overflow-x: auto !important;
       overscroll-behavior-x: contain;
       scrollbar-width: none;
@@ -1027,21 +1180,21 @@ function cropAvatar(image: HTMLImageElement) {
       }
     }
 
-    .n-tabs-nav-scroll-content {
+    :deep(.n-tabs-nav-scroll-content) {
       display: flex;
       flex-wrap: nowrap;
       width: max-content;
       min-width: 100%;
     }
 
-    .n-tabs-tab {
+    :deep(.n-tabs-tab) {
       flex: 0 0 auto;
       padding-left: 10px;
       padding-right: 10px;
     }
 
     .form-stack,
-    .n-form {
+    :deep(.n-form) {
       max-width: 100%;
       min-width: 0;
     }
@@ -1051,9 +1204,9 @@ function cropAvatar(image: HTMLImageElement) {
     padding: 16px 16px 24px;
   }
 
-  .is-compact .editor-scrollbar {
-    .n-scrollbar-container,
-    .n-scrollbar-content {
+  :global(.editor-route.is-compact) .editor-scrollbar {
+    :deep(.n-scrollbar-container),
+    :deep(.n-scrollbar-content) {
       max-width: 100%;
       min-width: 0;
     }
@@ -1063,9 +1216,6 @@ function cropAvatar(image: HTMLImageElement) {
     grid-template-columns: 1fr;
   }
 
-  .avatar-editor {
-    align-items: flex-start;
-  }
 }
 
 @media (max-width: 620px) {

@@ -217,7 +217,7 @@ onBeforeUnmount(() => {
   </section>
 </template>
 
-<style lang="scss">
+<style scoped lang="scss">
 .template-drawer {
   position: relative;
   z-index: 30;

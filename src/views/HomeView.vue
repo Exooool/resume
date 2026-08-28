@@ -51,7 +51,7 @@ function startEditing() {
   </main>
 </template>
 
-<style lang="scss">
+<style scoped lang="scss">
 .home-page {
   position: relative;
   height: 100vh;
@@ -81,7 +81,7 @@ function startEditing() {
   font-size: 16px;
   font-weight: 800;
 
-  .n-icon {
+  :deep(.n-icon) {
     font-size: 22px;
   }
 }
@@ -160,7 +160,7 @@ function startEditing() {
     border-radius: 0;
   }
 
-  .resume-list-card-preview-inner {
+  :deep(.resume-list-card-preview-inner) {
     box-shadow: none;
   }
 }

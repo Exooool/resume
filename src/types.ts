@@ -21,22 +21,42 @@ export interface EducationItem {
   details: string[];
 }
 
+export interface WorkExperienceItem {
+  id: string;
+  company: string;
+  title: string;
+  city: string;
+  period: PeriodRange;
+  highlights: string[];
+}
+
 export interface ProjectItem {
   id: string;
   name: string;
   role: string;
   period: PeriodRange;
   stack: string;
+  description: string;
   highlights: string[];
 }
 
-export interface SkillGroup {
-  id: string;
-  label: string;
-  skills: string[];
-}
+export type SkillEditMode = 'list' | 'custom';
 
-export type SkillEditMode = 'groups' | 'custom';
+export const RESUME_SECTION_IDS = [
+  'basic',
+  'education',
+  'workExperience',
+  'projects',
+  'skills',
+  'summary',
+] as const;
+
+export type ResumeSectionId = (typeof RESUME_SECTION_IDS)[number];
+
+export interface ResumeTheme {
+  fontFamily: string;
+  accentColor: string;
+}
 
 export type ResumeTemplateId =
   | 'classic'
@@ -51,11 +71,15 @@ export type ResumeTemplateId =
 
 export interface ResumeData {
   templateId: ResumeTemplateId;
+  sectionOrder: ResumeSectionId[];
+  hiddenSections: ResumeSectionId[];
+  theme: ResumeTheme;
   basic: BasicInfo;
   education: EducationItem[];
+  workExperience: WorkExperienceItem[];
   projects: ProjectItem[];
   skillMode: SkillEditMode;
-  skillGroups: SkillGroup[];
+  skillItems: string[];
   skillText: string;
   summary: string;
   smartOnePage: boolean;
@@ -82,17 +106,26 @@ export type ResumeBlock =
     }
   | {
       id: string;
-      kind: 'project';
-      item: ProjectItem;
+      kind: 'workExperience';
+      item: WorkExperienceItem;
       showTopline?: boolean;
       showMeta?: boolean;
       highlightIndexes?: number[];
     }
   | {
       id: string;
+      kind: 'project';
+      item: ProjectItem;
+      showTopline?: boolean;
+      showMeta?: boolean;
+      showDescription?: boolean;
+      highlightIndexes?: number[];
+    }
+  | {
+      id: string;
       kind: 'skills';
-      groups: SkillGroup[];
-      groupIndexes?: number[];
+      items: string[];
+      itemIndexes?: number[];
     }
   | { id: string; kind: 'skillsText'; text: string }
   | { id: string; kind: 'summary'; text: string };

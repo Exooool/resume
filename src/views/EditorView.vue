@@ -1,18 +1,19 @@
 <script setup lang="ts">
-import { Eye, PenLine } from '@lucide/vue';
+import { Eye, PenLine, SlidersHorizontal } from '@lucide/vue';
 import { NButton, NIcon } from 'naive-ui';
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import ResumeControlPanel from '../components/ResumeControlPanel.vue';
 import ResumeFormPanel from '../components/ResumeFormPanel.vue';
 import ResumePreviewPanel from '../components/ResumePreviewPanel.vue';
 import ResumeTemplateChooser from '../components/ResumeTemplateChooser.vue';
 import { useResumeEditor } from '../composables/useResumeEditor';
 import { createBlankResume, createDefaultResume } from '../data/defaultResume';
-import type { ResumeTemplateId } from '../types';
+import type { ResumeSectionId, ResumeTemplateId } from '../types';
 import { cloneResumeData } from '../utils/resume';
 import { getResumeDocument, updateResumeDocument } from '../utils/resumeStorage';
 
-const COMPACT_QUERY = '(max-width: 1020px)';
+const COMPACT_QUERY = '(max-width: 1180px)';
 const isDev = import.meta.env.DEV;
 
 const route = useRoute();
@@ -33,12 +34,16 @@ const {
   pageCountLabel,
   exportingType,
   spaceStyle,
+  canUndo,
+  canRedo,
+  undo,
+  redo,
   addEducation,
   removeEducation,
+  addWorkExperience,
+  removeWorkExperience,
   addProject,
   removeProject,
-  addSkillGroup,
-  removeSkillGroup,
   setMeasureRef,
   collectPageRef,
   exportPDF,
@@ -48,8 +53,9 @@ const {
 
 const isTemplateChooserOpen = ref(false);
 const draftTemplateId = ref<ResumeTemplateId>(resume.templateId);
+const activeSection = ref<ResumeSectionId>(resume.sectionOrder[0] ?? 'basic');
 const isCompactLayout = ref(false);
-const mobilePane = ref<'edit' | 'preview'>('edit');
+const mobilePane = ref<'settings' | 'edit' | 'preview'>('edit');
 let saveTimer = 0;
 let compactMedia: MediaQueryList | null = null;
 
@@ -123,20 +129,67 @@ function backToList() {
   void router.push('/resumes');
 }
 
-function setMobilePane(pane: 'edit' | 'preview') {
+function setMobilePane(pane: 'settings' | 'edit' | 'preview') {
   mobilePane.value = pane;
+}
+
+function selectSection(sectionId: ResumeSectionId) {
+  activeSection.value = sectionId;
+  if (isCompactLayout.value) {
+    mobilePane.value = 'edit';
+  }
+}
+
+function toggleSection(sectionId: ResumeSectionId) {
+  if (sectionId === 'basic') {
+    return;
+  }
+
+  const hiddenIndex = resume.hiddenSections.indexOf(sectionId);
+  if (hiddenIndex >= 0) {
+    resume.hiddenSections.splice(hiddenIndex, 1);
+    return;
+  }
+
+  resume.hiddenSections.push(sectionId);
+}
+
+function removeSection(sectionId: ResumeSectionId) {
+  if (sectionId === 'basic') {
+    return;
+  }
+
+  resume.sectionOrder = resume.sectionOrder.filter((id) => id !== sectionId);
+  resume.hiddenSections = resume.hiddenSections.filter((id) => id !== sectionId);
+
+  if (activeSection.value === sectionId) {
+    activeSection.value = resume.sectionOrder[0] ?? 'basic';
+  }
+}
+
+function addSection(sectionId: ResumeSectionId) {
+  if (!resume.sectionOrder.includes(sectionId)) {
+    resume.sectionOrder.push(sectionId);
+  }
+  resume.hiddenSections = resume.hiddenSections.filter((id) => id !== sectionId);
+  selectSection(sectionId);
 }
 
 function fillDemoData() {
   const demo = cloneResumeData(createDefaultResume());
   resume.templateId = demo.templateId;
+  resume.sectionOrder = demo.sectionOrder;
+  resume.hiddenSections = demo.hiddenSections;
+  resume.theme = demo.theme;
   resume.basic = demo.basic;
   resume.education = demo.education;
+  resume.workExperience = demo.workExperience;
   resume.projects = demo.projects;
   resume.skillMode = demo.skillMode;
-  resume.skillGroups = demo.skillGroups;
+  resume.skillItems = demo.skillItems;
   resume.skillText = demo.skillText;
   resume.summary = demo.summary;
+  resume.smartOnePage = demo.smartOnePage;
 }
 </script>
 
@@ -147,7 +200,7 @@ function fillDemoData() {
     :class="{
       'template-chooser-open': isTemplateChooserOpen,
       'is-compact': isCompactLayout,
-      'show-mobile-preview': isCompactLayout && mobilePane === 'preview',
+      [`show-mobile-${mobilePane}`]: isCompactLayout,
     }"
   >
     <Transition name="template-drawer">
@@ -160,21 +213,40 @@ function fillDemoData() {
     </Transition>
 
     <div class="app-shell">
-      <ResumeFormPanel
-        :resume="resume"
-        :resume-name="resumeName"
-        :compact="isCompactLayout"
-        :show-demo-fill="isDev"
-        @back-to-list="backToList"
-        @open-template-chooser="openTemplateChooser"
-        @fill-demo="fillDemoData"
-        @add-education="addEducation"
-        @remove-education="removeEducation"
-        @add-project="addProject"
-        @remove-project="removeProject"
-        @add-skill-group="addSkillGroup"
-        @remove-skill-group="removeSkillGroup"
-      />
+      <div class="editor-workspace">
+        <ResumeControlPanel
+          :resume="resume"
+          :resume-name="resumeName"
+          :active-section="activeSection"
+          :exporting-type="exportingType"
+          :can-undo="canUndo"
+          :can-redo="canRedo"
+          :show-demo-fill="isDev"
+          @update:active-section="selectSection"
+          @toggle-section="toggleSection"
+          @remove-section="removeSection"
+          @add-section="addSection"
+          @undo="undo"
+          @redo="redo"
+          @back-to-list="backToList"
+          @open-template-chooser="openTemplateChooser"
+          @fill-demo="fillDemoData"
+          @export-pdf="exportPDF"
+          @export-png="exportPNG"
+          @export-jpg="exportJPG"
+        />
+        <ResumeFormPanel
+          :resume="resume"
+          :active-section="activeSection"
+          @update:active-section="selectSection"
+          @add-education="addEducation"
+          @remove-education="removeEducation"
+          @add-work-experience="addWorkExperience"
+          @remove-work-experience="removeWorkExperience"
+          @add-project="addProject"
+          @remove-project="removeProject"
+        />
+      </div>
       <ResumePreviewPanel
         :pages="pages"
         :preview-blocks="previewBlocks"
@@ -182,16 +254,23 @@ function fillDemoData() {
         :page-count-label="pageCountLabel"
         :exporting-type="exportingType"
         :space-style="spaceStyle"
-        :compact="isCompactLayout"
         :collect-page-ref="collectPageRef"
         :set-measure-ref="setMeasureRef"
-        @export-pdf="exportPDF"
-        @export-png="exportPNG"
-        @export-jpg="exportJPG"
       />
     </div>
 
     <nav v-if="isCompactLayout && !isTemplateChooserOpen" class="mobile-editor-nav">
+      <n-button
+        class="mobile-editor-nav-btn"
+        :type="mobilePane === 'settings' ? 'primary' : 'default'"
+        :secondary="mobilePane !== 'settings'"
+        @click="setMobilePane('settings')"
+      >
+        <template #icon>
+          <n-icon :component="SlidersHorizontal" />
+        </template>
+        配置
+      </n-button>
       <n-button
         class="mobile-editor-nav-btn"
         :type="mobilePane === 'edit' ? 'primary' : 'default'"
@@ -218,7 +297,7 @@ function fillDemoData() {
   </main>
 </template>
 
-<style lang="scss">
+<style scoped lang="scss">
 .editor-route {
   position: relative;
   display: grid;
@@ -236,8 +315,16 @@ function fillDemoData() {
 .app-shell {
   display: grid;
   grid-row: 2;
-  grid-template-columns: minmax(360px, 520px) minmax(0, 1fr);
+  grid-template-columns: minmax(680px, 820px) minmax(0, 1fr);
   height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.editor-workspace {
+  display: grid;
+  grid-template-columns: minmax(240px, 280px) minmax(380px, 1fr);
+  min-width: 0;
   min-height: 0;
   overflow: hidden;
 }
@@ -250,6 +337,7 @@ function fillDemoData() {
     overflow: hidden;
   }
 
+  .control-panel,
   .editor-panel,
   .preview-panel {
     min-height: 0;
@@ -257,16 +345,16 @@ function fillDemoData() {
     overflow: hidden;
   }
 
-  .n-scrollbar-rail {
+  :deep(.n-scrollbar-rail) {
     display: none;
   }
 
-  .n-scrollbar-container {
+  :deep(.n-scrollbar-container) {
     overflow: hidden;
   }
 }
 
-@media (max-width: 1020px) {
+@media (max-width: 1180px) {
   .editor-route.is-compact {
     grid-template-rows: 0 minmax(0, 1fr) auto;
     width: 100%;
@@ -279,10 +367,10 @@ function fillDemoData() {
       grid-template-rows: minmax(0, 1fr) 0 0;
     }
 
-    &.template-chooser-open .template-drawer-enter-to,
-    &.template-chooser-open .template-drawer-leave-from,
-    .template-drawer-enter-to,
-    .template-drawer-leave-from {
+    &.template-chooser-open :deep(.template-drawer-enter-to),
+    &.template-chooser-open :deep(.template-drawer-leave-from),
+    :deep(.template-drawer-enter-to),
+    :deep(.template-drawer-leave-from) {
       height: 100%;
     }
   }
@@ -302,6 +390,15 @@ function fillDemoData() {
       grid-template-rows: minmax(0, 1fr);
     }
 
+    .editor-workspace {
+      position: absolute;
+      inset: 0;
+      display: block;
+      min-width: 0;
+      min-height: 0;
+    }
+
+    .control-panel,
     .editor-panel,
     .preview-panel {
       position: absolute;
@@ -315,23 +412,20 @@ function fillDemoData() {
       overflow: hidden;
     }
 
-    &:not(.show-mobile-preview) .preview-panel {
+    .control-panel,
+    .editor-panel,
+    .preview-panel {
       z-index: 0;
       visibility: hidden;
       pointer-events: none;
     }
 
-    &:not(.show-mobile-preview) .editor-panel,
+    &.show-mobile-settings .control-panel,
+    &.show-mobile-edit .editor-panel,
     &.show-mobile-preview .preview-panel {
       z-index: 1;
       visibility: visible;
       pointer-events: auto;
-    }
-
-    &.show-mobile-preview .editor-panel {
-      z-index: 0;
-      visibility: hidden;
-      pointer-events: none;
     }
   }
 
@@ -343,7 +437,7 @@ function fillDemoData() {
     z-index: 20;
     display: grid;
     grid-row: 3;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
     width: 100%;
     max-width: 100%;
