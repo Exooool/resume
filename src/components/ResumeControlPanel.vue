@@ -25,18 +25,21 @@ import {
 import {
   NButton,
   NColorPicker,
+  NDropdown,
   NIcon,
   NPopover,
   NPopconfirm,
   NScrollbar,
   NSelect,
+  NSlider,
   NSwitch,
 } from 'naive-ui';
-import { computed } from 'vue';
+import type { DropdownOption } from 'naive-ui';
+import { computed, h } from 'vue';
 import type { Component } from 'vue';
 import draggable from 'vuedraggable';
 import { RESUME_SECTION_IDS } from '../types';
-import type { ResumeData, ResumeSectionId } from '../types';
+import type { ResumeData, ResumeSectionId, ResumeTypography } from '../types';
 
 const props = defineProps<{
   resume: ResumeData;
@@ -81,7 +84,7 @@ const sectionDefinitions: Record<ResumeSectionId, SectionDefinition> = {
 const fontOptions = [
   {
     label: '现代黑体',
-    value: '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", Arial, sans-serif',
+    value: '"PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif',
   },
   {
     label: '经典宋体',
@@ -95,6 +98,20 @@ const fontOptions = [
     label: '简洁西文',
     value: 'Inter, Arial, sans-serif',
   },
+];
+
+const typographyFields: Array<{
+  key: keyof ResumeTypography;
+  label: string;
+  min: number;
+  max: number;
+}> = [
+  { key: 'nameSize', label: '姓名', min: 24, max: 48 },
+  { key: 'titleSize', label: '职位', min: 12, max: 24 },
+  { key: 'sectionSize', label: '模块标题', min: 12, max: 24 },
+  { key: 'entrySize', label: '条目标题', min: 12, max: 20 },
+  { key: 'bodySize', label: '正文', min: 10, max: 16 },
+  { key: 'contactSize', label: '联系方式', min: 10, max: 16 },
 ];
 
 const LOCKED_SECTION_ID: ResumeSectionId = 'basic';
@@ -140,6 +157,47 @@ function onSectionMove(event: SectionMoveEvent) {
 
 function isHidden(sectionId: ResumeSectionId) {
   return props.resume.hiddenSections.includes(sectionId);
+}
+
+const exportOptions = computed<DropdownOption[]>(() => [
+  {
+    label: props.exportingType === 'pdf' ? '导出中...' : '导出 PDF',
+    key: 'pdf',
+    disabled: Boolean(props.exportingType),
+    icon: () => h(NIcon, { component: FileText }),
+  },
+  {
+    label: props.exportingType === 'png' ? '导出中...' : '导出 PNG',
+    key: 'png',
+    disabled: Boolean(props.exportingType),
+    icon: () => h(NIcon, { component: Download }),
+  },
+  {
+    label: props.exportingType === 'jpg' ? '导出中...' : '导出 JPG',
+    key: 'jpg',
+    disabled: Boolean(props.exportingType),
+    icon: () => h(NIcon, { component: FileImage }),
+  },
+]);
+
+function handleExportSelect(key: string | number) {
+  if (props.exportingType) {
+    return;
+  }
+
+  if (key === 'pdf') {
+    emit('export-pdf');
+    return;
+  }
+
+  if (key === 'png') {
+    emit('export-png');
+    return;
+  }
+
+  if (key === 'jpg') {
+    emit('export-jpg');
+  }
 }
 </script>
 
@@ -187,50 +245,29 @@ function isHidden(sectionId: ResumeSectionId) {
             模拟数据
           </n-button>
         </div>
-        <label class="smart-page-row">
-          <span>智能压缩为一页</span>
-          <n-switch v-model:value="resume.smartOnePage" size="small" />
-        </label>
       </section>
 
       <section class="control-section export-section">
-        <div class="section-heading-row">
-          <h2>导出简历</h2>
-        </div>
         <div class="export-actions">
-          <n-button
-            secondary
-            :loading="exportingType === 'pdf'"
-            :disabled="Boolean(exportingType)"
-            @click="emit('export-pdf')"
+          <n-dropdown
+            trigger="hover"
+            placement="bottom"
+            :options="exportOptions"
+            @select="handleExportSelect"
           >
-            <template #icon>
-              <n-icon v-if="exportingType !== 'pdf'" :component="FileText" />
-            </template>
-            {{ exportingType === 'pdf' ? '导出中' : 'PDF' }}
-          </n-button>
-          <n-button
-            secondary
-            :loading="exportingType === 'png'"
-            :disabled="Boolean(exportingType)"
-            @click="emit('export-png')"
-          >
-            <template #icon>
-              <n-icon v-if="exportingType !== 'png'" :component="Download" />
-            </template>
-            {{ exportingType === 'png' ? '导出中' : 'PNG' }}
-          </n-button>
-          <n-button
-            secondary
-            :loading="exportingType === 'jpg'"
-            :disabled="Boolean(exportingType)"
-            @click="emit('export-jpg')"
-          >
-            <template #icon>
-              <n-icon v-if="exportingType !== 'jpg'" :component="FileImage" />
-            </template>
-            {{ exportingType === 'jpg' ? '导出中' : 'JPG' }}
-          </n-button>
+            <n-button
+              block
+              type="primary"
+              class="export-trigger-btn"
+              :loading="Boolean(exportingType)"
+              :disabled="Boolean(exportingType)"
+            >
+              <template #icon>
+                <n-icon v-if="!exportingType" :component="Download" />
+              </template>
+              {{ exportingType ? '导出中...' : '导出简历' }}
+            </n-button>
+          </n-dropdown>
         </div>
       </section>
     </div>
@@ -359,6 +396,29 @@ function isHidden(sectionId: ResumeSectionId) {
               :modes="['hex']"
             />
           </label>
+          <label class="theme-toggle-row">
+            <span>智能压缩上下间距</span>
+            <n-switch v-model:value="resume.smartCompressSpacing" size="small" />
+          </label>
+          <div class="theme-subsection">
+            <div class="theme-subsection-title">字号</div>
+            <label
+              v-for="field in typographyFields"
+              :key="field.key"
+              class="theme-size-field"
+            >
+              <div class="theme-size-field-head">
+                <span>{{ field.label }}</span>
+                <span>{{ resume.theme.typography[field.key] }}px</span>
+              </div>
+              <n-slider
+                v-model:value="resume.theme.typography[field.key]"
+                :min="field.min"
+                :max="field.max"
+                :step="1"
+              />
+            </label>
+          </div>
         </section>
       </div>
     </n-scrollbar>
@@ -463,7 +523,7 @@ function isHidden(sectionId: ResumeSectionId) {
   grid-template-columns: 1fr;
 }
 
-.smart-page-row {
+.theme-toggle-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -476,14 +536,46 @@ function isHidden(sectionId: ResumeSectionId) {
   font-size: 12px;
 }
 
-.export-actions {
+.theme-subsection {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
+  gap: 10px;
+  padding: 12px 10px;
+  border: 1px solid #e0e7e4;
+  border-radius: 6px;
+  background: #ffffff;
+}
 
-  :deep(.n-button) {
-    min-width: 0;
-    padding: 0 6px;
+.theme-subsection-title {
+  color: #22332d;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.theme-size-field {
+  display: grid;
+  gap: 4px;
+}
+
+.theme-size-field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #52615c;
+  font-size: 12px;
+}
+
+.export-actions {
+  :deep(.n-dropdown) {
+    display: block;
+    width: 100%;
+  }
+
+  .export-trigger-btn {
+    width: 100%;
+    height: 40px;
+    font-size: 14px;
+    font-weight: 600;
   }
 }
 

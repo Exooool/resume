@@ -151,15 +151,15 @@ function expandAll(items: Array<{ id: string }>) {
 }
 
 function getEducationLabel(item: EducationItem, index: number) {
-  return item.school.trim() || `教育经历 ${index + 1}`;
+  return item.school.trim() || '学校名称';
 }
 
 function getWorkLabel(item: WorkExperienceItem, index: number) {
-  return item.company.trim() || `工作经历 ${index + 1}`;
+  return item.company.trim() || '公司名称';
 }
 
 function getProjectLabel(item: ProjectItem, index: number) {
-  return item.name.trim() || `项目经历 ${index + 1}`;
+  return item.name.trim() || '项目名称';
 }
 
 function toggleEducationReorder() {
@@ -543,7 +543,7 @@ function cropAvatar(image: HTMLImageElement) {
                   >
                 <template #header>
                   <div class="item-card-title">
-                    <span>教育经历 {{ index + 1 }}</span>
+                    <span>{{ getEducationLabel(education, index) }}</span>
                     <n-button
                       quaternary
                       circle
@@ -720,7 +720,7 @@ function cropAvatar(image: HTMLImageElement) {
                   >
                 <template #header>
                   <div class="item-card-title">
-                    <span>工作经历 {{ index + 1 }}</span>
+                    <span>{{ getWorkLabel(work, index) }}</span>
                     <n-button
                       quaternary
                       circle
@@ -902,7 +902,7 @@ function cropAvatar(image: HTMLImageElement) {
                   >
                 <template #header>
                   <div class="item-card-title">
-                    <span>项目经历 {{ index + 1 }}</span>
+                    <span>{{ getProjectLabel(project, index) }}</span>
                     <n-button
                       quaternary
                       circle

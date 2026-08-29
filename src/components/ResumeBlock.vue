@@ -277,7 +277,7 @@ function formatPeriod(period: PeriodRange | string, fallback: string) {
   h1 {
     margin: 0;
     color: #10181d;
-    font-size: 34px;
+    font-size: var(--resume-font-name);
     font-weight: 800;
     line-height: 1.1;
   }
@@ -285,7 +285,7 @@ function formatPeriod(period: PeriodRange | string, fallback: string) {
   p {
     margin: calc(8px * var(--resume-space-scale)) 0 0;
     color: var(--resume-accent);
-    font-size: 16px;
+    font-size: var(--resume-font-title);
     font-weight: 700;
   }
 }
@@ -317,7 +317,7 @@ function formatPeriod(period: PeriodRange | string, fallback: string) {
   margin: 0;
   padding: 2px 0 0;
   color: #41525b;
-  font-size: 12px;
+  font-size: var(--resume-font-contact);
   line-height: 1.45;
   list-style: none;
   text-align: right;
@@ -330,7 +330,7 @@ function formatPeriod(period: PeriodRange | string, fallback: string) {
   margin-top: calc(22px * var(--resume-space-scale));
   margin-bottom: calc(12px * var(--resume-space-scale));
   color: #13252d;
-  font-size: 16px;
+  font-size: var(--resume-font-section);
   font-weight: 800;
 
   &::after {
@@ -362,13 +362,13 @@ function formatPeriod(period: PeriodRange | string, fallback: string) {
   h3 {
     margin: 0;
     color: #17252c;
-    font-size: 15px;
+    font-size: var(--resume-font-entry);
     line-height: 1.45;
   }
 
   time {
     color: #60727a;
-    font-size: 12px;
+    font-size: var(--resume-font-body);
     white-space: nowrap;
   }
 }
@@ -379,7 +379,7 @@ function formatPeriod(period: PeriodRange | string, fallback: string) {
   gap: 8px 12px;
   margin-top: 3px;
   color: #4c6169;
-  font-size: 12px;
+  font-size: var(--resume-font-body);
   line-height: 1.5;
 
   span + span::before {
@@ -392,7 +392,7 @@ function formatPeriod(period: PeriodRange | string, fallback: string) {
 .entry-description {
   margin: calc(6px * var(--resume-space-scale)) 0 0;
   color: #304047;
-  font-size: 12px;
+  font-size: var(--resume-font-body);
   line-height: 1.65;
   white-space: pre-wrap;
   word-break: break-word;
@@ -404,7 +404,7 @@ function formatPeriod(period: PeriodRange | string, fallback: string) {
   margin: calc(8px * var(--resume-space-scale)) 0 0;
   padding-left: 18px;
   color: #304047;
-  font-size: 12px;
+  font-size: var(--resume-font-body);
   line-height: 1.65;
 
   li {
@@ -419,7 +419,7 @@ function formatPeriod(period: PeriodRange | string, fallback: string) {
   gap: 6px;
   margin-bottom: 7px;
   color: #304047;
-  font-size: 12px;
+  font-size: var(--resume-font-body);
   line-height: 1.75;
 
   p {

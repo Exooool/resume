@@ -54,9 +54,28 @@ export const RESUME_SECTION_IDS = [
 
 export type ResumeSectionId = (typeof RESUME_SECTION_IDS)[number];
 
+export interface ResumeTypography {
+  nameSize: number;
+  titleSize: number;
+  sectionSize: number;
+  entrySize: number;
+  bodySize: number;
+  contactSize: number;
+}
+
+export const DEFAULT_RESUME_TYPOGRAPHY: ResumeTypography = {
+  nameSize: 34,
+  titleSize: 16,
+  sectionSize: 16,
+  entrySize: 15,
+  bodySize: 12,
+  contactSize: 12,
+};
+
 export interface ResumeTheme {
   fontFamily: string;
   accentColor: string;
+  typography: ResumeTypography;
 }
 
 export type ResumeTemplateId =
@@ -83,7 +102,7 @@ export interface ResumeData {
   skillItems: string[];
   skillText: string;
   summary: string;
-  smartOnePage: boolean;
+  smartCompressSpacing: boolean;
 }
 
 export interface ResumeDocument {

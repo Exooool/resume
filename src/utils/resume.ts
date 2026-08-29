@@ -5,9 +5,10 @@ import type {
   ResumeBlock,
   ResumeData,
   ResumeSectionId,
+  ResumeTypography,
   WorkExperienceItem,
 } from '../types';
-import { RESUME_SECTION_IDS } from '../types';
+import { DEFAULT_RESUME_TYPOGRAPHY, RESUME_SECTION_IDS } from '../types';
 
 export const A4_WIDTH_MM = 210;
 export const A4_HEIGHT_MM = 297;
@@ -21,6 +22,27 @@ export function makeId(prefix: string) {
 
 export function cloneResumeData(resume: ResumeData): ResumeData {
   return JSON.parse(JSON.stringify(resume)) as ResumeData;
+}
+
+export function normalizeResumeTypography(value: unknown): ResumeTypography {
+  const source = value && typeof value === 'object' ? (value as Partial<ResumeTypography>) : {};
+
+  return {
+    nameSize: clampTypographySize(source.nameSize, DEFAULT_RESUME_TYPOGRAPHY.nameSize, 24, 48),
+    titleSize: clampTypographySize(source.titleSize, DEFAULT_RESUME_TYPOGRAPHY.titleSize, 12, 24),
+    sectionSize: clampTypographySize(source.sectionSize, DEFAULT_RESUME_TYPOGRAPHY.sectionSize, 12, 24),
+    entrySize: clampTypographySize(source.entrySize, DEFAULT_RESUME_TYPOGRAPHY.entrySize, 12, 20),
+    bodySize: clampTypographySize(source.bodySize, DEFAULT_RESUME_TYPOGRAPHY.bodySize, 10, 16),
+    contactSize: clampTypographySize(source.contactSize, DEFAULT_RESUME_TYPOGRAPHY.contactSize, 10, 16),
+  };
+}
+
+function clampTypographySize(value: unknown, fallback: number, min: number, max: number) {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return fallback;
+  }
+
+  return Math.min(max, Math.max(min, Math.round(value)));
 }
 
 export function createPreviewBlocks(resume: ResumeData) {

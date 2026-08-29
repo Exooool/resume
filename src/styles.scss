@@ -74,6 +74,12 @@ textarea {
   );
   --resume-accent: #12715b;
   --resume-space-scale: 1;
+  --resume-font-name: 34px;
+  --resume-font-title: 16px;
+  --resume-font-section: 16px;
+  --resume-font-entry: 15px;
+  --resume-font-body: 12px;
+  --resume-font-contact: 12px;
 }
 
 .resume-page.resume-template-fresh {
@@ -88,7 +94,7 @@ textarea {
 
     h1 {
       color: #12352d;
-      font-size: 32px;
+      font-size: var(--resume-font-name);
     }
 
     p {
@@ -105,7 +111,7 @@ textarea {
     gap: 10px;
     margin-top: calc(20px * var(--resume-space-scale));
     color: var(--resume-accent);
-    font-size: 15px;
+    font-size: var(--resume-font-section);
 
     &::before {
       width: 6px;
@@ -131,12 +137,12 @@ textarea {
     padding-bottom: 14px;
 
     h1 {
-      font-size: 30px;
+      font-size: var(--resume-font-name);
     }
 
     p {
       margin-top: 5px;
-      font-size: 14px;
+      font-size: var(--resume-font-title);
     }
   }
 
@@ -153,13 +159,13 @@ textarea {
   .skill-row,
   .skill-text-block,
   .summary-block {
-    font-size: 11px;
+    font-size: var(--resume-font-body);
   }
 
   .section-heading {
     margin-top: calc(16px * var(--resume-space-scale));
     margin-bottom: calc(8px * var(--resume-space-scale));
-    font-size: 14px;
+    font-size: var(--resume-font-section);
   }
 
   .resume-list {
@@ -189,7 +195,7 @@ textarea {
 
     h1 {
       color: #10251f;
-      font-size: 36px;
+      font-size: var(--resume-font-name);
     }
   }
 
@@ -259,7 +265,7 @@ textarea {
 
     h1 {
       color: #111820;
-      font-size: 40px;
+      font-size: var(--resume-font-name);
       font-weight: 750;
     }
 
@@ -314,7 +320,7 @@ textarea {
     border-radius: 4px;
     background: #eef5f2;
     color: var(--resume-accent);
-    font-size: 14px;
+    font-size: var(--resume-font-section);
 
     &::after {
       display: none;
@@ -414,7 +420,7 @@ textarea {
 
     h1 {
       color: #24332e;
-      font-size: 38px;
+      font-size: var(--resume-font-name);
       font-weight: 700;
     }
 
@@ -440,7 +446,7 @@ textarea {
     margin-top: calc(28px * var(--resume-space-scale));
     margin-bottom: calc(15px * var(--resume-space-scale));
     color: #66766f;
-    font-size: 13px;
+    font-size: var(--resume-font-section);
 
     &::after {
       background: #d8e1dd;

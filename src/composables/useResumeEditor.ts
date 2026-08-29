@@ -20,13 +20,20 @@ import {
   cloneResumeData,
   createPreviewBlocks,
   makeId,
+  normalizeResumeTypography,
 } from '../utils/resume';
+
+const COMPRESSED_SPACE_SCALE = 0.75;
 
 export function useResumeEditor(
   initialResume: ResumeData = createDefaultResume(),
   documentName: Ref<string> = ref('未命名简历'),
 ) {
   const resume = reactive<ResumeData>(cloneResumeData(initialResume));
+  resume.theme.typography = normalizeResumeTypography(resume.theme.typography);
+  if (typeof resume.smartCompressSpacing !== 'boolean') {
+    resume.smartCompressSpacing = false;
+  }
   const pages = ref<ResumeBlock[][]>([]);
   const measureRef = ref<HTMLElement | null>(null);
   const pageRefs = ref<HTMLElement[]>([]);
@@ -47,6 +54,12 @@ export function useResumeEditor(
     '--resume-space-scale': String(spaceScale.value),
     '--resume-accent': resume.theme.accentColor,
     '--resume-font-family': resume.theme.fontFamily,
+    '--resume-font-name': `${resume.theme.typography.nameSize}px`,
+    '--resume-font-title': `${resume.theme.typography.titleSize}px`,
+    '--resume-font-section': `${resume.theme.typography.sectionSize}px`,
+    '--resume-font-entry': `${resume.theme.typography.entrySize}px`,
+    '--resume-font-body': `${resume.theme.typography.bodySize}px`,
+    '--resume-font-contact': `${resume.theme.typography.contactSize}px`,
   }));
 
   onBeforeUpdate(() => {
@@ -91,17 +104,18 @@ export function useResumeEditor(
   );
 
   watch(
-    () => resume.smartOnePage,
+    () => resume.smartCompressSpacing,
     () => {
       schedulePagination();
     },
   );
 
   watch(
-    () => resume.theme.fontFamily,
+    () => resume.theme,
     () => {
       schedulePagination();
     },
+    { deep: true },
   );
 
   function addEducation() {
@@ -231,8 +245,8 @@ export function useResumeEditor(
     spaceScale.value = 1;
     await nextTick();
 
-    if (resume.smartOnePage) {
-      spaceScale.value = await resolveSmartSpaceScale(source);
+    if (resume.smartCompressSpacing) {
+      spaceScale.value = COMPRESSED_SPACE_SCALE;
       await nextTick();
     }
 
@@ -635,40 +649,6 @@ export function useResumeEditor(
       parseFloat(style.marginTop || '0') +
       parseFloat(style.marginBottom || '0')
     );
-  }
-
-  function measureStackedHeight(source: HTMLElement) {
-    return Array.from(source.children).reduce(
-      (total, node) => total + getOuterHeight(node as HTMLElement),
-      0,
-    );
-  }
-
-  async function resolveSmartSpaceScale(source: HTMLElement) {
-    const MIN_SPACE_SCALE = 0.35;
-    const naturalHeight = measureStackedHeight(source);
-    if (naturalHeight <= PREVIEW_CONTENT_HEIGHT) {
-      return 1;
-    }
-
-    let low = MIN_SPACE_SCALE;
-    let high = 1;
-    let best = MIN_SPACE_SCALE;
-
-    for (let step = 0; step < 8; step += 1) {
-      const mid = Number(((low + high) / 2).toFixed(3));
-      spaceScale.value = mid;
-      await nextTick();
-
-      if (measureStackedHeight(source) <= PREVIEW_CONTENT_HEIGHT) {
-        best = mid;
-        low = mid;
-      } else {
-        high = mid;
-      }
-    }
-
-    return best;
   }
 
   async function capturePages() {

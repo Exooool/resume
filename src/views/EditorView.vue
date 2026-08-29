@@ -189,7 +189,7 @@ function fillDemoData() {
   resume.skillItems = demo.skillItems;
   resume.skillText = demo.skillText;
   resume.summary = demo.summary;
-  resume.smartOnePage = demo.smartOnePage;
+  resume.smartCompressSpacing = demo.smartCompressSpacing;
 }
 </script>
 
@@ -315,7 +315,7 @@ function fillDemoData() {
 .app-shell {
   display: grid;
   grid-row: 2;
-  grid-template-columns: minmax(680px, 820px) minmax(0, 1fr);
+  grid-template-columns: 720px minmax(0, 1fr);
   height: 100%;
   min-height: 0;
   overflow: hidden;
@@ -323,7 +323,7 @@ function fillDemoData() {
 
 .editor-workspace {
   display: grid;
-  grid-template-columns: minmax(240px, 280px) minmax(380px, 1fr);
+  grid-template-columns: 260px 460px;
   min-width: 0;
   min-height: 0;
   overflow: hidden;

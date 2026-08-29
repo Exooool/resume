@@ -1,7 +1,7 @@
 import { createBlankResume } from '../data/defaultResume';
 import { RESUME_SECTION_IDS } from '../types';
 import type { ProjectItem, ResumeData, ResumeDocument, ResumeSectionId, SkillEditMode, WorkExperienceItem } from '../types';
-import { cloneResumeData, makeId } from './resume';
+import { cloneResumeData, makeId, normalizeResumeTypography } from './resume';
 
 const STORAGE_KEY = 'resume-editor-documents-v1';
 
@@ -143,7 +143,9 @@ function normalizeResumeData(value: unknown): ResumeData {
     skillItems: normalizeSkillItems(source, fallback.skillItems),
     skillText: typeof source.skillText === 'string' ? source.skillText : fallback.skillText,
     summary: typeof source.summary === 'string' ? source.summary : fallback.summary,
-    smartOnePage: Boolean(source.smartOnePage),
+    smartCompressSpacing: Boolean(
+      source.smartCompressSpacing ?? (source as { smartOnePage?: boolean }).smartOnePage,
+    ),
     sectionOrder,
     hiddenSections,
     theme: {
@@ -155,6 +157,7 @@ function normalizeResumeData(value: unknown): ResumeData {
         typeof source.theme?.accentColor === 'string'
           ? source.theme.accentColor
           : fallback.theme.accentColor,
+      typography: normalizeResumeTypography(source.theme?.typography ?? fallback.theme.typography),
     },
   };
 }
