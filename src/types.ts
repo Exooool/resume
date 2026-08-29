@@ -27,6 +27,7 @@ export interface WorkExperienceItem {
   title: string;
   city: string;
   period: PeriodRange;
+  description: string;
   highlights: string[];
 }
 
@@ -110,6 +111,7 @@ export type ResumeBlock =
       item: WorkExperienceItem;
       showTopline?: boolean;
       showMeta?: boolean;
+      showDescription?: boolean;
       highlightIndexes?: number[];
     }
   | {

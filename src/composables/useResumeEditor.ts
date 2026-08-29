@@ -123,6 +123,7 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
       title: '',
       city: '',
       period: null,
+      description: '',
       highlights: [''],
     });
   }
@@ -348,6 +349,7 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
                   id: `${block.id}__${sliceSeq}`,
                   showTopline,
                   showMeta,
+                  showDescription,
                   highlightIndexes: [...itemIndexes],
                 } satisfies ResumeBlock);
 

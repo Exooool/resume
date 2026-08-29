@@ -51,7 +51,7 @@ const showMeta = computed(() => {
 });
 
 const showDescription = computed(() => {
-  if (props.block.kind !== 'project') {
+  if (props.block.kind !== 'project' && props.block.kind !== 'workExperience') {
     return false;
   }
 
@@ -127,11 +127,12 @@ const isEntryContinuation = computed(() => {
     return false;
   }
 
-  if (props.block.kind === 'project') {
+  if (props.block.kind === 'project' || props.block.kind === 'workExperience') {
     return (
       props.block.showTopline === false &&
       props.block.showMeta === false &&
-      props.block.showDescription === false
+      props.block.showDescription === false &&
+      props.block.highlightIndexes !== undefined
     );
   }
 
@@ -215,6 +216,7 @@ function formatPeriod(period: PeriodRange | string, fallback: string) {
       <span>{{ block.item.title || '职位' }}</span>
       <span v-if="block.item.city">{{ block.item.city }}</span>
     </div>
+    <p v-if="showDescription" class="entry-description">{{ block.item.description }}</p>
     <ul v-if="workHighlights.length" class="resume-list">
       <li v-for="highlight in workHighlights" :key="highlight">{{ highlight }}</li>
     </ul>

@@ -27,6 +27,7 @@ import {
   NColorPicker,
   NIcon,
   NPopover,
+  NPopconfirm,
   NScrollbar,
   NSelect,
   NSwitch,
@@ -156,78 +157,80 @@ function isHidden(sectionId: ResumeSectionId) {
       </div>
     </header>
 
+    <div class="control-pinned">
+      <section class="control-section quick-actions-section">
+        <div class="section-heading-row">
+          <h2>快捷操作</h2>
+        </div>
+        <div class="history-actions">
+          <n-button secondary :disabled="!canUndo" @click="emit('undo')">
+            <template #icon><n-icon :component="Undo2" /></template>
+            撤销
+          </n-button>
+          <n-button secondary :disabled="!canRedo" @click="emit('redo')">
+            <template #icon><n-icon :component="Redo2" /></template>
+            重做
+          </n-button>
+        </div>
+        <div class="document-actions">
+          <n-button secondary @click="emit('open-template-chooser')">
+            <template #icon><n-icon :component="LayoutGrid" /></template>
+            选择模板
+          </n-button>
+          <n-button
+            v-if="showDemoFill"
+            secondary
+            type="warning"
+            @click="emit('fill-demo')"
+          >
+            <template #icon><n-icon :component="FlaskConical" /></template>
+            模拟数据
+          </n-button>
+        </div>
+        <label class="smart-page-row">
+          <span>智能压缩为一页</span>
+          <n-switch v-model:value="resume.smartOnePage" size="small" />
+        </label>
+      </section>
+
+      <section class="control-section export-section">
+        <div class="section-heading-row">
+          <h2>导出简历</h2>
+        </div>
+        <div class="export-actions">
+          <n-button
+            secondary
+            :loading="exportingType === 'pdf'"
+            :disabled="Boolean(exportingType)"
+            @click="emit('export-pdf')"
+          >
+            <template #icon><n-icon :component="FileText" /></template>
+            PDF
+          </n-button>
+          <n-button
+            secondary
+            :loading="exportingType === 'png'"
+            :disabled="Boolean(exportingType)"
+            @click="emit('export-png')"
+          >
+            <template #icon><n-icon :component="Download" /></template>
+            PNG
+          </n-button>
+          <n-button
+            secondary
+            :loading="exportingType === 'jpg'"
+            :disabled="Boolean(exportingType)"
+            @click="emit('export-jpg')"
+          >
+            <template #icon><n-icon :component="FileImage" /></template>
+            JPG
+          </n-button>
+        </div>
+      </section>
+    </div>
+
     <n-scrollbar class="control-scrollbar">
       <div class="control-content">
-        <section class="control-section quick-actions-section">
-          <div class="section-heading-row">
-            <h2>快捷操作</h2>
-          </div>
-          <div class="history-actions">
-            <n-button secondary :disabled="!canUndo" @click="emit('undo')">
-              <template #icon><n-icon :component="Undo2" /></template>
-              撤销
-            </n-button>
-            <n-button secondary :disabled="!canRedo" @click="emit('redo')">
-              <template #icon><n-icon :component="Redo2" /></template>
-              重做
-            </n-button>
-          </div>
-          <div class="document-actions">
-            <n-button secondary @click="emit('open-template-chooser')">
-              <template #icon><n-icon :component="LayoutGrid" /></template>
-              选择模板
-            </n-button>
-            <n-button
-              v-if="showDemoFill"
-              secondary
-              type="warning"
-              @click="emit('fill-demo')"
-            >
-              <template #icon><n-icon :component="FlaskConical" /></template>
-              模拟数据
-            </n-button>
-          </div>
-          <label class="smart-page-row">
-            <span>智能压缩为一页</span>
-            <n-switch v-model:value="resume.smartOnePage" size="small" />
-          </label>
-        </section>
-
-        <section class="control-section">
-          <div class="section-heading-row">
-            <h2>导出简历</h2>
-          </div>
-          <div class="export-actions">
-            <n-button
-              secondary
-              :loading="exportingType === 'pdf'"
-              :disabled="Boolean(exportingType)"
-              @click="emit('export-pdf')"
-            >
-              <template #icon><n-icon :component="FileText" /></template>
-              PDF
-            </n-button>
-            <n-button
-              secondary
-              :loading="exportingType === 'png'"
-              :disabled="Boolean(exportingType)"
-              @click="emit('export-png')"
-            >
-              <template #icon><n-icon :component="Download" /></template>
-              PNG
-            </n-button>
-            <n-button
-              secondary
-              :loading="exportingType === 'jpg'"
-              :disabled="Boolean(exportingType)"
-              @click="emit('export-jpg')"
-            >
-              <template #icon><n-icon :component="FileImage" /></template>
-              JPG
-            </n-button>
-          </div>
-        </section>
-
         <section class="control-section module-section">
           <div class="section-heading-row">
             <h2>简历模块</h2>
@@ -283,14 +286,30 @@ function isHidden(sectionId: ResumeSectionId) {
                     <n-icon :component="isHidden(section.id) ? EyeOff : Eye" />
                   </button>
                   <button
+                    v-if="isLockedSection(section.id)"
                     type="button"
                     class="section-action is-danger"
-                    :disabled="isLockedSection(section.id)"
-                    :title="isLockedSection(section.id) ? '基本信息不可删除' : '删除模块'"
-                    @click.stop="emit('remove-section', section.id)"
+                    disabled
+                    title="基本信息不可删除"
                   >
                     <n-icon :component="Trash2" />
                   </button>
+                  <n-popconfirm
+                    v-else
+                    @positive-click="emit('remove-section', section.id)"
+                  >
+                    <template #trigger>
+                      <button
+                        type="button"
+                        class="section-action is-danger"
+                        title="删除模块"
+                        @click.stop
+                      >
+                        <n-icon :component="Trash2" />
+                      </button>
+                    </template>
+                    确定删除「{{ section.label }}」模块吗？
+                  </n-popconfirm>
                 </span>
               </div>
             </template>
@@ -373,17 +392,24 @@ function isHidden(sectionId: ResumeSectionId) {
   }
 }
 
+.control-pinned {
+  flex-shrink: 0;
+  display: grid;
+  gap: 18px;
+  padding: 16px 14px;
+  border-bottom: 1px solid #dde6e2;
+  background: #f7faf8;
+}
+
 .control-scrollbar {
   flex: 1;
   min-height: 0;
 }
 
 .control-content {
-  --control-inline-padding: 14px;
-  --control-top-padding: 16px;
   display: grid;
   gap: 18px;
-  padding: var(--control-top-padding) var(--control-inline-padding) 28px;
+  padding: 16px 14px 28px;
 }
 
 .control-section {
@@ -391,16 +417,9 @@ function isHidden(sectionId: ResumeSectionId) {
   gap: 10px;
 }
 
-.quick-actions-section {
-  position: sticky;
-  z-index: 5;
-  top: 0;
-  margin: calc(var(--control-top-padding) * -1) calc(var(--control-inline-padding) * -1) 0;
-  padding: var(--control-top-padding) var(--control-inline-padding) 14px;
-  border-bottom: 1px solid #dde6e2;
-  background: rgba(247, 250, 248, 0.98);
-  box-shadow: 0 8px 16px rgba(34, 55, 47, 0.05);
-  backdrop-filter: blur(8px);
+.quick-actions-section,
+.export-section {
+  gap: 10px;
 }
 
 .section-heading-row {
@@ -623,13 +642,21 @@ function isHidden(sectionId: ResumeSectionId) {
     border-right: 0;
   }
 
+  .control-pinned,
   .control-content {
-    --control-inline-padding: 18px;
-    --control-top-padding: 18px;
     width: min(100%, 420px);
     margin: 0 auto;
-    padding: var(--control-top-padding) var(--control-inline-padding) 32px;
+    padding-left: 18px;
+    padding-right: 18px;
     box-sizing: border-box;
+  }
+
+  .control-pinned {
+    padding-top: 18px;
+  }
+
+  .control-content {
+    padding-bottom: 32px;
   }
 }
 </style>

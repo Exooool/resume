@@ -1,6 +1,6 @@
 import { createBlankResume } from '../data/defaultResume';
 import { RESUME_SECTION_IDS } from '../types';
-import type { ProjectItem, ResumeData, ResumeDocument, ResumeSectionId, SkillEditMode } from '../types';
+import type { ProjectItem, ResumeData, ResumeDocument, ResumeSectionId, SkillEditMode, WorkExperienceItem } from '../types';
 import { cloneResumeData, makeId } from './resume';
 
 const STORAGE_KEY = 'resume-editor-documents-v1';
@@ -134,7 +134,7 @@ function normalizeResumeData(value: unknown): ResumeData {
     },
     education: Array.isArray(source.education) ? source.education : fallback.education,
     workExperience: Array.isArray(source.workExperience)
-      ? source.workExperience
+      ? source.workExperience.map((item) => normalizeWorkExperienceItem(item))
       : fallback.workExperience,
     projects: Array.isArray(source.projects)
       ? source.projects.map((item) => normalizeProjectItem(item))
@@ -213,6 +213,21 @@ function normalizeSkillItems(
   }
 
   return fallback.length ? fallback : [''];
+}
+
+function normalizeWorkExperienceItem(value: unknown): WorkExperienceItem {
+  const item = (value && typeof value === 'object' ? value : {}) as Partial<WorkExperienceItem>;
+  return {
+    id: typeof item.id === 'string' ? item.id : makeId('work'),
+    company: typeof item.company === 'string' ? item.company : '',
+    title: typeof item.title === 'string' ? item.title : '',
+    city: typeof item.city === 'string' ? item.city : '',
+    period: Array.isArray(item.period) ? item.period : null,
+    description: typeof item.description === 'string' ? item.description : '',
+    highlights: Array.isArray(item.highlights)
+      ? item.highlights.map((highlight) => (typeof highlight === 'string' ? highlight : ''))
+      : [''],
+  };
 }
 
 function normalizeProjectItem(value: unknown): ProjectItem {

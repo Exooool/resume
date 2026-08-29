@@ -68,6 +68,7 @@ export function createTemplateChooserSample(): ResumeData {
         title: '前端开发工程师',
         city: '上海',
         period: ['2024.07', '2025.03'],
+        description: '面向企业用户的 B 端产品团队，负责编辑器与导出相关前端能力建设。',
         highlights: [
           '负责简历编辑器与导出相关功能的设计与落地。',
           '推动组件复用与表单配置化，缩短需求交付周期。',
@@ -160,6 +161,7 @@ export function createDefaultResume(): ResumeData {
         title: '前端开发工程师',
         city: '上海',
         period: ['2024.07', '2025.08'],
+        description: '面向企业客户的 B 端产品团队，负责编辑器、预览与导出链路的前端建设。',
         highlights: [
           '负责 B 端编辑器产品的核心页面与交互落地，覆盖表单配置、实时预览与导出链路。',
           '推动公共组件与业务模板沉淀，需求交付周期平均缩短约 25%。',
@@ -172,6 +174,7 @@ export function createDefaultResume(): ResumeData {
         title: '前端开发实习生',
         city: '上海',
         period: ['2023.06', '2024.06'],
+        description: '电商与中后台业务团队，参与运营系统核心模块迭代与联调。',
         highlights: [
           '参与中后台运营系统迭代，完成商品、订单等模块页面开发与联调。',
           '沉淀通用 CRUD 页模板与权限路由封装，减少重复开发成本。',

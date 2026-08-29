@@ -125,6 +125,7 @@ function hasWorkExperienceContent(item: WorkExperienceItem) {
     item.company,
     item.title,
     item.city,
+    item.description,
     ...item.highlights,
   ].some((value) => value.trim());
 }
