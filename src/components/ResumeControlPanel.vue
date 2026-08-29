@@ -204,8 +204,10 @@ function isHidden(sectionId: ResumeSectionId) {
             :disabled="Boolean(exportingType)"
             @click="emit('export-pdf')"
           >
-            <template #icon><n-icon :component="FileText" /></template>
-            PDF
+            <template #icon>
+              <n-icon v-if="exportingType !== 'pdf'" :component="FileText" />
+            </template>
+            {{ exportingType === 'pdf' ? '导出中' : 'PDF' }}
           </n-button>
           <n-button
             secondary
@@ -213,8 +215,10 @@ function isHidden(sectionId: ResumeSectionId) {
             :disabled="Boolean(exportingType)"
             @click="emit('export-png')"
           >
-            <template #icon><n-icon :component="Download" /></template>
-            PNG
+            <template #icon>
+              <n-icon v-if="exportingType !== 'png'" :component="Download" />
+            </template>
+            {{ exportingType === 'png' ? '导出中' : 'PNG' }}
           </n-button>
           <n-button
             secondary
@@ -222,8 +226,10 @@ function isHidden(sectionId: ResumeSectionId) {
             :disabled="Boolean(exportingType)"
             @click="emit('export-jpg')"
           >
-            <template #icon><n-icon :component="FileImage" /></template>
-            JPG
+            <template #icon>
+              <n-icon v-if="exportingType !== 'jpg'" :component="FileImage" />
+            </template>
+            {{ exportingType === 'jpg' ? '导出中' : 'JPG' }}
           </n-button>
         </div>
       </section>

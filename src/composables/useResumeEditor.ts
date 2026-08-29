@@ -1,5 +1,6 @@
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import type { Ref } from 'vue';
 import {
   computed,
   nextTick,
@@ -21,7 +22,10 @@ import {
   makeId,
 } from '../utils/resume';
 
-export function useResumeEditor(initialResume: ResumeData = createDefaultResume()) {
+export function useResumeEditor(
+  initialResume: ResumeData = createDefaultResume(),
+  documentName: Ref<string> = ref('未命名简历'),
+) {
   const resume = reactive<ResumeData>(cloneResumeData(initialResume));
   const pages = ref<ResumeBlock[][]>([]);
   const measureRef = ref<HTMLElement | null>(null);
@@ -746,6 +750,11 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
     }
 
     exportingType.value = type;
+    await nextTick();
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => resolve());
+    });
+
     try {
       await task();
     } catch (error) {
@@ -764,9 +773,15 @@ export function useResumeEditor(initialResume: ResumeData = createDefaultResume(
     link.remove();
   }
 
+  function sanitizeFilePart(value: string, fallback: string) {
+    const trimmed = value.trim();
+    return (trimmed || fallback).replace(/[\\/:*?"<>|]+/g, '-');
+  }
+
   function fileBaseName() {
-    const rawName = resume.basic.name.trim() || 'resume';
-    return rawName.replace(/[\\/:*?"<>|]+/g, '-');
+    const docName = sanitizeFilePart(documentName.value, '未命名简历');
+    const personName = sanitizeFilePart(resume.basic.name, '未命名');
+    return `${docName}-${personName}`;
   }
 
   return {

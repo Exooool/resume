@@ -49,7 +49,7 @@ const {
   exportPDF,
   exportPNG,
   exportJPG,
-} = useResumeEditor(storedDocument?.data ?? createBlankResume());
+} = useResumeEditor(storedDocument?.data ?? createBlankResume(), resumeName);
 
 const isTemplateChooserOpen = ref(false);
 const draftTemplateId = ref<ResumeTemplateId>(resume.templateId);

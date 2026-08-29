@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NScrollbar } from 'naive-ui';
+import { NScrollbar, NSpin } from 'naive-ui';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import type { ResumeBlock, ResumeTemplateId } from '../types';
 import { A4_PAGE_HEIGHT } from '../utils/resume';
@@ -41,6 +41,19 @@ const pageStackStyle = computed(() => ({
   transform: `scale(${previewScale.value})`,
   transformOrigin: 'top left',
 }));
+
+const exportLoadingText = computed(() => {
+  switch (props.exportingType) {
+    case 'pdf':
+      return '正在导出 PDF...';
+    case 'png':
+      return '正在导出 PNG...';
+    case 'jpg':
+      return '正在导出 JPG...';
+    default:
+      return '';
+  }
+});
 
 onMounted(() => {
   const stage = stageRef.value;
@@ -91,31 +104,37 @@ function updateScale(width: number) {
       </div>
     </header>
 
-    <n-scrollbar class="preview-scrollbar">
-      <div ref="stageRef" class="preview-stage">
-        <div class="preview-fit" :style="previewFitStyle">
-          <div class="page-count">{{ pageCountLabel }}</div>
-          <div class="page-scale-clip" :style="scaleClipStyle">
-            <div class="page-stack" :style="pageStackStyle">
-              <section
-                v-for="(page, pageIndex) in pages"
-                :key="pageIndex"
-                :ref="collectPageRef"
-                class="resume-page"
-                :class="`resume-template-${templateId}`"
-                :style="spaceStyle"
-              >
-                <ResumeBlockView
-                  v-for="block in page"
-                  :key="`${pageIndex}-${block.id}`"
-                  :block="block"
-                />
-              </section>
+    <div class="preview-scroll-wrap">
+      <n-scrollbar class="preview-scrollbar">
+        <div ref="stageRef" class="preview-stage">
+          <div class="preview-fit" :style="previewFitStyle">
+            <div class="page-count">{{ pageCountLabel }}</div>
+            <div class="page-scale-clip" :style="scaleClipStyle">
+              <div class="page-stack" :style="pageStackStyle">
+                <section
+                  v-for="(page, pageIndex) in pages"
+                  :key="pageIndex"
+                  :ref="collectPageRef"
+                  class="resume-page"
+                  :class="`resume-template-${templateId}`"
+                  :style="spaceStyle"
+                >
+                  <ResumeBlockView
+                    v-for="block in page"
+                    :key="`${pageIndex}-${block.id}`"
+                    :block="block"
+                  />
+                </section>
+              </div>
             </div>
           </div>
         </div>
+      </n-scrollbar>
+
+      <div v-if="exportingType" class="preview-loading-overlay" aria-live="polite">
+        <n-spin :show="true" size="large" :description="exportLoadingText" />
       </div>
-    </n-scrollbar>
+    </div>
 
     <div class="measurement">
       <div
@@ -159,8 +178,26 @@ function updateScale(width: number) {
   }
 }
 
-.preview-scrollbar {
+.preview-scroll-wrap {
+  position: relative;
   flex: 1;
+  min-height: 0;
+}
+
+.preview-scrollbar {
+  height: 100%;
+  min-width: 0;
+}
+
+.preview-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(231 235 237 / 76%);
+  pointer-events: all;
 }
 
 .page-count {
