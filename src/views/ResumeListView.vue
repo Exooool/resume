@@ -24,7 +24,6 @@ const router = useRouter();
 const resumes = ref<ResumeDocument[]>([]);
 const showCreateModal = ref(false);
 const newResumeName = ref('');
-
 const canCreateResume = computed(() => Boolean(newResumeName.value.trim()));
 
 const resumeCards = computed(() =>

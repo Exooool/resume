@@ -9,7 +9,7 @@ import ResumePreviewPanel from '../components/ResumePreviewPanel.vue';
 import ResumeTemplateChooser from '../components/ResumeTemplateChooser.vue';
 import { useResumeEditor } from '../composables/useResumeEditor';
 import { createBlankResume, createDefaultResume } from '../data/defaultResume';
-import type { ResumeSectionId, ResumeTemplateId } from '../types';
+import type { ResumeData, ResumeSectionId, ResumeTemplateId } from '../types';
 import { cloneResumeData } from '../utils/resume';
 import { getResumeDocument, updateResumeDocument } from '../utils/resumeStorage';
 
@@ -49,6 +49,8 @@ const {
   exportPDF,
   exportPNG,
   exportJPG,
+  exportJSON,
+  importResumeData,
 } = useResumeEditor(storedDocument?.data ?? createBlankResume(), resumeName);
 
 const isTemplateChooserOpen = ref(false);
@@ -191,6 +193,12 @@ function fillDemoData() {
   resume.summary = demo.summary;
   resume.smartCompressSpacing = demo.smartCompressSpacing;
 }
+
+function handleImportResume(payload: { name: string; data: ResumeData }) {
+  importResumeData(payload.data);
+  resumeName.value = payload.name;
+  activeSection.value = resume.sectionOrder[0] ?? 'basic';
+}
 </script>
 
 <template>
@@ -234,6 +242,8 @@ function fillDemoData() {
           @export-pdf="exportPDF"
           @export-png="exportPNG"
           @export-jpg="exportJPG"
+          @export-json="exportJSON"
+          @import-resume="handleImportResume"
         />
         <ResumeFormPanel
           :resume="resume"

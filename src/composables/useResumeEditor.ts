@@ -11,7 +11,9 @@ import {
   ref,
   watch,
 } from 'vue';
+import { downloadResumeJson } from '../utils/resumeImportExport';
 import { createDefaultResume } from '../data/defaultResume';
+import { parseResumeData } from '../utils/resumeStorage';
 import type { ResumeBlock, ResumeData } from '../types';
 import {
   A4_HEIGHT_MM,
@@ -712,6 +714,24 @@ export function useResumeEditor(
     await exportImages('jpg');
   }
 
+  function exportJSON() {
+    downloadResumeJson(documentName.value, resume, `${fileBaseName()}.json`);
+  }
+
+  function importResumeData(data: ResumeData) {
+    const next = cloneResumeData(parseResumeData(data));
+    next.theme.typography = normalizeResumeTypography(next.theme.typography);
+
+    (Object.keys(next) as Array<keyof ResumeData>).forEach((key) => {
+      resume[key] = next[key] as never;
+    });
+
+    history.value = [];
+    future.value = [];
+    lastHistorySnapshot = cloneResumeData(resume);
+    schedulePagination();
+  }
+
   async function exportImages(type: 'png' | 'jpg') {
     await exportResume(type, async () => {
       const canvases = await capturePages();
@@ -724,7 +744,7 @@ export function useResumeEditor(
     });
   }
 
-  async function exportResume(type: 'pdf' | 'png' | 'jpg', task: () => Promise<void>) {
+  async function exportResume(type: 'pdf' | 'png' | 'jpg', task: () => Promise<void> | void) {
     if (exportingType.value) {
       return;
     }
@@ -786,5 +806,7 @@ export function useResumeEditor(
     exportPDF,
     exportPNG,
     exportJPG,
+    exportJSON,
+    importResumeData,
   };
 }

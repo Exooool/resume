@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   ArrowLeft,
+  Braces,
   Briefcase,
   Download,
   Eye,
@@ -19,6 +20,7 @@ import {
   Trash2,
   Type,
   Undo2,
+  Upload,
   UserRound,
   Wrench,
 } from '@lucide/vue';
@@ -35,11 +37,12 @@ import {
   NSwitch,
 } from 'naive-ui';
 import type { DropdownOption } from 'naive-ui';
-import { computed, h } from 'vue';
+import { computed, h, ref } from 'vue';
 import type { Component } from 'vue';
 import draggable from 'vuedraggable';
 import { RESUME_SECTION_IDS } from '../types';
 import type { ResumeData, ResumeSectionId, ResumeTypography } from '../types';
+import { readResumeJsonFile } from '../utils/resumeImportExport';
 
 const props = defineProps<{
   resume: ResumeData;
@@ -64,6 +67,8 @@ const emit = defineEmits<{
   'export-pdf': [];
   'export-png': [];
   'export-jpg': [];
+  'export-json': [];
+  'import-resume': [payload: { name: string; data: ResumeData }];
 }>();
 
 interface SectionDefinition {
@@ -159,6 +164,8 @@ function isHidden(sectionId: ResumeSectionId) {
   return props.resume.hiddenSections.includes(sectionId);
 }
 
+const importInputRef = ref<HTMLInputElement | null>(null);
+
 const exportOptions = computed<DropdownOption[]>(() => [
   {
     label: props.exportingType === 'pdf' ? '导出中...' : '导出 PDF',
@@ -177,6 +184,12 @@ const exportOptions = computed<DropdownOption[]>(() => [
     key: 'jpg',
     disabled: Boolean(props.exportingType),
     icon: () => h(NIcon, { component: FileImage }),
+  },
+  {
+    label: '导出 JSON',
+    key: 'json',
+    disabled: Boolean(props.exportingType),
+    icon: () => h(NIcon, { component: Braces }),
   },
 ]);
 
@@ -197,6 +210,32 @@ function handleExportSelect(key: string | number) {
 
   if (key === 'jpg') {
     emit('export-jpg');
+    return;
+  }
+
+  if (key === 'json') {
+    emit('export-json');
+  }
+}
+
+function openImportPicker() {
+  importInputRef.value?.click();
+}
+
+async function onImportFileChange(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  input.value = '';
+
+  if (!file) {
+    return;
+  }
+
+  try {
+    const payload = await readResumeJsonFile(file);
+    emit('import-resume', payload);
+  } catch (error) {
+    window.alert(error instanceof Error ? error.message : '导入失败');
   }
 }
 </script>
@@ -248,6 +287,13 @@ function handleExportSelect(key: string | number) {
       </section>
 
       <section class="control-section export-section">
+        <input
+          ref="importInputRef"
+          class="import-json-input"
+          type="file"
+          accept=".json,application/json"
+          @change="onImportFileChange"
+        />
         <div class="export-actions">
           <n-dropdown
             trigger="hover"
@@ -269,6 +315,18 @@ function handleExportSelect(key: string | number) {
             </n-button>
           </n-dropdown>
         </div>
+        <n-button
+          block
+          secondary
+          class="import-json-btn"
+          :disabled="Boolean(exportingType)"
+          @click="openImportPicker"
+        >
+          <template #icon>
+            <n-icon :component="Upload" />
+          </template>
+          导入 JSON
+        </n-button>
       </section>
     </div>
 
@@ -461,7 +519,7 @@ function handleExportSelect(key: string | number) {
 .control-pinned {
   flex-shrink: 0;
   display: grid;
-  gap: 18px;
+  gap: 12px;
   padding: 16px 14px;
   border-bottom: 1px solid #dde6e2;
   background: #f7faf8;
@@ -577,6 +635,16 @@ function handleExportSelect(key: string | number) {
     font-size: 14px;
     font-weight: 600;
   }
+}
+
+.import-json-input {
+  display: none;
+}
+
+.import-json-btn {
+  width: 100%;
+  height: 36px;
+  font-size: 13px;
 }
 
 .section-list {

@@ -108,6 +108,10 @@ function normalizeResumeDocument(value: unknown) {
   };
 }
 
+export function parseResumeData(value: unknown): ResumeData {
+  return normalizeResumeData(value);
+}
+
 function normalizeResumeData(value: unknown): ResumeData {
   const fallback = createBlankResume();
   if (!value || typeof value !== 'object') {
