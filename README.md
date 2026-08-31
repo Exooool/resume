@@ -130,4 +130,15 @@ src/
 npm run build
 ```
 
-构建产物输出到 `dist/`。仓库已配置 GitHub Actions，可在推送到 `main` 分支后自动构建并发布到 GitHub Pages；生产构建会将 Vite 基础路径设置为 `/resume/`。
+构建产物输出到 `dist/`。仓库已配置 GitHub Actions，推送到 `main` 分支后会自动构建并通过 SSH 部署到服务器。
+
+在 GitHub 仓库 **Settings → Secrets and variables → Actions** 中配置以下 Secrets：
+
+| Secret | 说明 |
+| --- | --- |
+| `DEPLOY_SSH_KEY` | 部署用 SSH 私钥 |
+| `DEPLOY_KNOWN_HOSTS` | 服务器 `known_hosts` 内容 |
+| `DEPLOY_HOST` | 服务器地址 |
+| `DEPLOY_PORT` | SSH 端口 |
+| `DEPLOY_USER` | SSH 用户名 |
+| `DEPLOY_PATH` | 服务器上的部署目录 |

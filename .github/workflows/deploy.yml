@@ -1,0 +1,92 @@
+name: Build and Deploy
+
+on:
+  # main 分支提交后自动部署
+  push:
+    branches:
+      - main
+
+  # 支持在 GitHub Actions 页面手动部署
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 避免短时间连续提交导致多个部署任务同时运行
+concurrency:
+  group: production-deploy
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    name: Build and deploy frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Check build output
+        run: |
+          test -d dist
+          test -f dist/index.html
+          echo "Build output is valid"
+
+      - name: Configure SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+          chmod 700 ~/.ssh
+          chmod 600 ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Test SSH connection
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          ssh \
+            -i ~/.ssh/id_ed25519 \
+            -p "$DEPLOY_PORT" \
+            -o BatchMode=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "echo 'SSH connection successful'"
+
+      - name: Deploy dist
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          rsync \
+            --archive \
+            --compress \
+            --delete \
+            --human-readable \
+            -e "ssh -i ~/.ssh/id_ed25519 -p $DEPLOY_PORT" \
+            dist/ \
+            "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/"
+
+      - name: Deployment completed
+        run: |
+          echo "Deployment completed"
+          echo "Commit: $GITHUB_SHA"
